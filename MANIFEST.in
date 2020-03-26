@@ -1,0 +1,18 @@
+include MANIFEST.in
+include requirements.txt
+include *.json
+include *.md
+include *.py
+include *.txt
+recursive-include tokhna_peru *.css
+recursive-include tokhna_peru *.csv
+recursive-include tokhna_peru *.html
+recursive-include tokhna_peru *.ico
+recursive-include tokhna_peru *.js
+recursive-include tokhna_peru *.json
+recursive-include tokhna_peru *.md
+recursive-include tokhna_peru *.png
+recursive-include tokhna_peru *.py
+recursive-include tokhna_peru *.svg
+recursive-include tokhna_peru *.txt
+recursive-exclude tokhna_peru *.pyc
