@@ -1,0 +1,77 @@
+{
+ "creation": "2020-04-02 11:28:56.435653",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "tipo_documento",
+  "serie_documento",
+  "tipo_comprobante",
+  "column_break_1",
+  "contingencia",
+  "online"
+ ],
+ "fields": [
+  {
+   "fieldname": "tipo_documento",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Tipo de Documento",
+   "options": "\nBoleta de Venta\nFactura\nNota de Cr\u00e9dito\nNota de D\u00e9bito\nGu\u00eda de Remisi\u00f3n"
+  },
+  {
+   "fieldname": "serie_documento",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Serie Documento"
+  },
+  {
+   "default": "0",
+   "fieldname": "contingencia",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Es contingencia?"
+  },
+  {
+   "default": "0",
+   "fieldname": "online",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "En linea"
+  },
+  {
+   "depends_on": "eval: doc.tipo_documento == \"Nota de Cr\u00e9dito\" || doc.tipo_documento == \"Nota de D\u00e9bito\"",
+   "fieldname": "tipo_comprobante",
+   "fieldtype": "Select",
+   "label": "Tipo Comprobante",
+   "options": "\nBoleta de Venta\nFactura"
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "modified": "2020-04-03 08:55:37.843180",
+ "modified_by": "Administrator",
+ "module": "Tokhna Peru",
+ "name": "Detalle Configuracion Series",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

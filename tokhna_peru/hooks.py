@@ -6,10 +6,26 @@ app_name = "tokhna_peru"
 app_title = "Tokhna Peru"
 app_publisher = "Tokhna"
 app_description = "Peru localization for ERPNext"
-app_icon = "octicon octicon-file-directory"
+app_icon = "octicon octicon-gear"
 app_color = "grey"
 app_email = "info@tokhna.dev"
 app_license = "MIT"
+fixtures = [
+    {
+        "dt": "Custom Field",
+        "filters": 
+            [
+                ["dt", "in", ("Supplier", "Company", "Customer", "Purchase Invoice", "Sales Invoice")]
+            ]
+    }, 
+    {
+        "dt": "Custom Script",
+        "filters": 
+            [
+                ["dt", "in", ("Supplier", "Company", "Customer", "Purchase Invoice", "Sales Invoice")]
+            ]
+    }
+]
 
 # Includes in <head>
 # ------------------
@@ -55,7 +71,7 @@ app_license = "MIT"
 # ------------
 
 # before_install = "tokhna_peru.install.before_install"
-# after_install = "tokhna_peru.install.after_install"
+after_install = "tokhna_peru.install.after_install"
 
 # Desk Notifications
 # ------------------
@@ -90,7 +106,7 @@ app_license = "MIT"
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
+scheduler_events = {
 # 	"all": [
 # 		"tokhna_peru.tasks.all"
 # 	],
@@ -106,7 +122,15 @@ app_license = "MIT"
 # 	"monthly": [
 # 		"tokhna_peru.tasks.monthly"
 # 	]
-# }
+    "cron": {
+        "30 0 * * *":[
+            "tokhna_peru.tasks.daily"
+        ],
+        "30 12 * * *":[
+            "tokhna_peru.tasks.daily"
+        ],
+    }
+}
 
 # Testing
 # -------

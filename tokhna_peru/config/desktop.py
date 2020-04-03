@@ -7,7 +7,7 @@ def get_data():
 		{
 			"module_name": "Tokhna Peru",
 			"color": "grey",
-			"icon": "octicon octicon-file-directory",
+			"icon": "octicon octicon-gear",
 			"type": "module",
 			"label": _("Tokhna Peru")
 		}

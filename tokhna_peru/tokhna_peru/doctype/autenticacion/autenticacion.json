@@ -1,0 +1,84 @@
+{
+ "autoname": "field:company",
+ "creation": "2020-04-02 09:02:13.282416",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "company",
+  "ruta",
+  "token",
+  "test_connection"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Compa\u00f1ia",
+   "options": "Company",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "test_connection",
+   "fieldtype": "Button",
+   "label": "Probar Conexi\u00f3n"
+  },
+  {
+   "description": "Ruta a la cual se conectar\u00e1 el m\u00f3dulo de Facturaci\u00f3n Electr\u00f3nica",
+   "fieldname": "ruta",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Ruta",
+   "reqd": 1
+  },
+  {
+   "fieldname": "token",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "TOKEN",
+   "reqd": 1
+  }
+ ],
+ "modified": "2020-04-02 09:36:31.167550",
+ "modified_by": "Administrator",
+ "module": "Tokhna Peru",
+ "name": "Autenticacion",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Administrator",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Stock Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "company",
+ "track_changes": 1
+}

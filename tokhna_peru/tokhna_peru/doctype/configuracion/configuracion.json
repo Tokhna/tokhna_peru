@@ -1,0 +1,105 @@
+{
+ "autoname": "field:company",
+ "creation": "2020-04-02 09:02:49.300633",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "sc_company",
+  "company",
+  "sc_configuracion_series",
+  "configuracion_series",
+  "salto_impuestos",
+  "igv",
+  "ibp",
+  "sc_impuestos",
+  "percepcion",
+  "salto_anticipo",
+  "anticipo"
+ ],
+ "fields": [
+  {
+   "fieldname": "sc_company",
+   "fieldtype": "Section Break",
+   "label": "Compa\u00f1ia"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Compa\u00f1ia",
+   "options": "Company",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "salto_impuestos",
+   "fieldtype": "Section Break",
+   "label": "Impuestos"
+  },
+  {
+   "fieldname": "sc_impuestos",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "salto_anticipo",
+   "fieldtype": "Section Break",
+   "label": "Anticipo"
+  },
+  {
+   "fieldname": "anticipo",
+   "fieldtype": "Link",
+   "label": "Producto Anticipo",
+   "options": "Item"
+  },
+  {
+   "fieldname": "sc_configuracion_series",
+   "fieldtype": "Section Break",
+   "label": "Configuracion de Series"
+  },
+  {
+   "fieldname": "configuracion_series",
+   "fieldtype": "Table",
+   "options": "Detalle Configuracion Series"
+  },
+  {
+   "fieldname": "igv",
+   "fieldtype": "Link",
+   "label": "IGV",
+   "options": "Sales Taxes and Charges Template"
+  },
+  {
+   "fieldname": "ibp",
+   "fieldtype": "Link",
+   "label": "Impuesto  a las Bolsas Pl\u00e1sticas",
+   "options": "Sales Taxes and Charges Template"
+  },
+  {
+   "fieldname": "percepcion",
+   "fieldtype": "Link",
+   "label": "Percepci\u00f3n",
+   "options": "Sales Taxes and Charges Template"
+  }
+ ],
+ "modified": "2020-04-02 11:39:58.435193",
+ "modified_by": "Administrator",
+ "module": "Tokhna Peru",
+ "name": "Configuracion",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "company",
+ "track_changes": 1
+}
