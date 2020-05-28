@@ -303,19 +303,6 @@ def read_txt(file):
 		data = data + line
 	return data
 
-def tipo_de_comprobante(codigo):
-    if codigo == "01":
-        tipo_comprobante = 1
-    elif codigo == "03":
-        tipo_comprobante = 2
-    elif codigo == "07":
-        tipo_comprobante = 3
-    elif codigo == "08":
-        tipo_comprobante = 4
-    elif codigo == "09":
-        tipo_comprobante = 7
-    return tipo_comprobante
-
 def get_serie_correlativo(name):
     try:
         tipo, serie, correlativo = name.split("-")
@@ -338,17 +325,21 @@ def get_moneda(currency):
     return moneda
 
 def get_address_information(party_address):
-    address = frappe.get_doc("Address", party_address)
-    return frappe._dict({
-        "address": "-".join(filter(None, (address.get('address_line1'), address.get('city'), address.get('state'), address.get('country')))),
-        "email": address.get('email_id'),
-        "ubigeo": address.get('ubigeo')
-    })
+	address = frappe.get_doc("Address", party_address)
+	country = frappe.get_doc("Country", address.get('country'))
+	return frappe._dict({
+		"address": "-".join(filter(None, (address.get('address_line1'), address.get('city'), address.get('state'), address.get('country')))),
+		"email": address.get('email_id'),
+		"ubigeo": address.get('ubigeo'),
+		"pais": country.get('code'),
+		"phone": address.get('phone'),
+		"code": address.get("code")
+	})
 
 def get_igv(company, name, doctype):
     configuracion = frappe.get_doc("Configuracion", company)
     if doctype == "Sales Invoice":
-        conf_tax = configuracion.igv_ventas
+        conf_tax = configuracion.igv
         account_head = frappe.db.get_value("Sales Taxes and Charges", filters={"parent": conf_tax})
         tax = frappe.get_doc("Sales Taxes and Charges", account_head)
         doc_tax_name = frappe.db.get_value("Sales Taxes and Charges",
@@ -356,21 +347,16 @@ def get_igv(company, name, doctype):
         doc_tax = frappe.get_doc("Sales Taxes and Charges", doc_tax_name)
     return doc_tax.rate, doc_tax.tax_amount, doc_tax.included_in_print_rate
 
-def get_impuesto_bolsas_plasticas(company, name, doctype):
-    if frappe.get_single("Accounts Settings").allow_plastic_bags_tax:
-        if doctype == "Sales Invoice":
-            conf_tax = frappe.get_single("Accounts Settings").plastic_bags_tax_sales
-            account_head = frappe.db.get_value("Sales Taxes and Charges", filters={"parent": conf_tax})
-            tax = frappe.get_doc("Sales Taxes and Charges", account_head)
-            doc_tax_name = frappe.db.get_value("Sales Taxes and Charges",
-                                            filters={"account_head": tax.account_head, "parent": name})
-            if doc_tax_name:
-                doc_tax = frappe.get_doc("Sales Taxes and Charges", doc_tax_name)
-            else:
-                return 0, 0, 0
-        return doc_tax.rate, doc_tax.tax_amount, doc_tax.included_in_print_rate
-    else:
-        return 0, 0, 0
+def get_ibp(company, name, doctype):
+    configuracion = frappe.get_doc("Configuracion", company)
+    if doctype == "Sales Invoice":
+        conf_tax = configuracion.ibp
+        account_head = frappe.db.get_value("Sales Taxes and Charges", filters={"parent": conf_tax})
+        tax = frappe.get_doc("Sales Taxes and Charges", account_head)
+        doc_tax_name = frappe.db.get_value("Sales Taxes and Charges",
+                                           filters={"account_head": tax.account_head, "parent": name})
+        doc_tax = frappe.get_doc("Sales Taxes and Charges", doc_tax_name)
+    return doc_tax.rate, doc_tax.tax_amount, doc_tax.included_in_print_rate
 
 def get_tipo_producto(item_name):
     producto = frappe.get_doc("Item", item_name)
