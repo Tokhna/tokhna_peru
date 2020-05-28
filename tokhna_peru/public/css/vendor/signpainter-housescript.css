@@ -1,0 +1,11 @@
+@font-face {
+    font-family: 'SignPainter HouseScript';
+    src: url('/assets/tokhna_peru/fonts/SignPainterHouseScript.eot');
+    src: url('/assets/tokhna_peru/fonts/SignPainterHouseScript.eot?#iefix') format('embedded-opentype'),
+        url('/assets/tokhna_peru/fonts/SignPainterHouseScript.woff2') format('woff2'),
+        url('/assets/tokhna_peru/fonts/SignPainterHouseScript.woff') format('woff'),
+        url('/assets/tokhna_peru/fonts/SignPainterHouseScript.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+

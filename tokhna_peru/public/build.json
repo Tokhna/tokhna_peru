@@ -1,0 +1,20 @@
+{
+    "css/tokhna_peru.css": [
+        "public/css/style.css",
+        "public/css/plugins/animate.css",
+        "public/css/plugins/easyzoom.css",
+        "public/css/plugins/jarallax.css",
+        "public/css/plugins/jquery-ui.css",
+        "public/css/plugins/jquery.mb.ytplayer.min.css",
+        "public/css/plugins/magnific-popup.css",
+        "public/css/plugins/owl-carousel.css",
+        "public/css/plugins/plugins.css",
+        "public/css/plugins/slick.css",
+        "public/css/vendor/bootstrap.min.css",
+        "public/css/vendor/font-awesome.css",
+        "public/css/vendor/linearicons.css",
+        "public/css/vendor/signpainter-housescript.css",
+        "public/css/vendor/themify-icons.css",
+        "public/css/vendor/vendor.css"
+    ]
+}

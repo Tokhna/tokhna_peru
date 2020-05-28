@@ -35,8 +35,8 @@ fixtures = [
 # app_include_js = "/assets/tokhna_peru/js/tokhna_peru.js"
 
 # include js, css files in header of web template
-# web_include_css = "/assets/tokhna_peru/css/tokhna_peru.css"
-# web_include_js = "/assets/tokhna_peru/js/tokhna_peru.js"
+web_include_css = "/assets/tokhna_peru/css/tokhna_peru.css"
+web_include_js = "/assets/tokhna_peru/js/tokhna_peru.js"
 
 # include js in page
 # page_js = {"page" : "public/js/file.js"}
@@ -51,7 +51,7 @@ fixtures = [
 # ----------
 
 # application home page (will override Website Settings)
-# home_page = "login"
+home_page = "index"
 
 # website user home page (by Role)
 # role_home_page = {
