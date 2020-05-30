@@ -8,6 +8,8 @@
   "sc_company",
   "company",
   "allow_unaffected_invoices",
+  "send_email_invoice",
+  "invoice_format",
   "sc_configuracion_series",
   "configuracion_series",
   "salto_impuestos",
@@ -86,9 +88,21 @@
    "fieldname": "allow_unaffected_invoices",
    "fieldtype": "Check",
    "label": "Permitir Comprobantes Inafectos"
+  },
+  {
+   "default": "0",
+   "fieldname": "send_email_invoice",
+   "fieldtype": "Check",
+   "label": "Enviar Comprobante por Email"
+  },
+  {
+   "fieldname": "invoice_format",
+   "fieldtype": "Select",
+   "label": "Formato de Comprobante Electr\u00f3nico",
+   "options": "\na4\nticket"
   }
  ],
- "modified": "2020-05-29 15:20:59.126247",
+ "modified": "2020-05-30 09:05:19.716373",
  "modified_by": "Administrator",
  "module": "Tokhna Peru",
  "name": "Configuracion",

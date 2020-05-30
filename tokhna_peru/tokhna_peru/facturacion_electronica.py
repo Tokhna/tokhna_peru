@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import frappe
+from frappe.utils import formatdate
 from tokhna_peru.tokhna_peru.doctype.autenticacion.autenticacion import get_autentication, get_url
 from tokhna_peru.tokhna_peru.doctype.configuracion.configuracion import get_unaffected_config
 from tokhna_peru.tokhna_peru.utils import get_serie_correlativo, get_moneda, get_igv, get_tipo_producto, get_serie_online, get_doc_conductor, get_doc_transportista, get_address_information, get_ibp
@@ -48,12 +49,12 @@ def send_document(company, invoice, doctype):
                     content = {
                         "serie_documento": serie,
                         "numero_documento": correlativo,
-                        "fecha_de_emision": doc.get_formatted("posting_date"),
+                        "fecha_de_emision": formatdate(doc.get_formatted("posting_date"), "yyyy-mm-dd"),
                         "hora_de_emision": doc.get_formatted("posting_time"),
                         "codigo_tipo_operacion": "0101",
                         "codigo_tipo_documento": doc.codigo_comprobante,
-                        "moneda": str(get_moneda(doc.currency)),
-                        "fecha_de_vencimiento": doc.get_formatted("due_date"),
+                        "codigo_tipo_moneda": doc.currency,
+                        "fecha_de_vencimiento": formatdate(doc.get_formatted("due_date"), "yyyy-mm-dd"),
                         "numero_orden_de_compra": doc.po_no,
                         "datos_del_cliente_o_receptor": {
                             "codigo_tipo_documento_identidad": doc.codigo_tipo_documento,
@@ -67,14 +68,14 @@ def send_document(company, invoice, doctype):
                         },
                         "totales": {
                             "total_exportacion": 0.00,
-                            "total_operaciones_gravadas": str(round(doc.net_total - monto_anticipo_neto, 2) * mult) if not igv==0 else "",
-                            "total_operaciones_inafectas": str(round(doc.net_total - monto_anticipo_neto, 2) * mult) if igv==0 else "",
+                            "total_operaciones_gravadas": str(round(doc.net_total - monto_anticipo_neto, 2) * mult) if not igv==0 else 0.00,
+                            "total_operaciones_inafectas": str(round(doc.net_total - monto_anticipo_neto, 2) * mult) if igv==0 else 0.00,
                             "total_operaciones_exoneradas": 0.00,
                             "total_operaciones_gratuitas": 0.00,
                             "total_igv": str(round(monto_impuesto - anticipo_amount, 2) * mult),
                             "total_impuestos_bolsa_plastica": str(round(monto_ibp, 2) * mult),
                             "total_impuestos": str(round(monto_impuesto - anticipo_amount, 2) * mult),
-                            "total_valor": str(round(doc.net_total - monto_anticipo_neto, 2) * mult) if not igv==0 else "",
+                            "total_valor": str(round(doc.net_total - monto_anticipo_neto, 2) * mult),
                             "total_venta": str(round(doc.grand_total - anticipo_total, 2) * mult)
                         },
                     }
@@ -82,9 +83,9 @@ def send_document(company, invoice, doctype):
                     for item in doc.items:
                         tipo_producto = get_tipo_producto(item.item_code)
                         content['items'].append({
-                            "codigo_interno": item.item_code,
+                            "codigo_interno": item.item_code.replace('-',''),
                             "descripcion": item.item_name,
-                            "codigo_producto_sunat": item.codigo_sunat,
+                            "codigo_producto_sunat": frappe.get_value("Item", item.item_code, "codigo_sunat") or "",
                             "unidad_de_medida": tipo_producto,
                             "cantidad": str(item.qty * mult),
                             "valor_unitario": str(round(item.net_rate, 2)),
@@ -104,6 +105,10 @@ def send_document(company, invoice, doctype):
                         content['documento_afectado'] = {
                             "external_id": doc.external_id
                         }
+                    if frappe.get_value("Configuracion", company, "invoice_format"):
+                        content["acciones"] = { 
+                            "formato_pdf": frappe.get_value("Configuracion", company, "invoice_format")
+                        }
                 elif doctype == "Delivery Note":
                     doc = frappe.get_doc("Delivery Note", invoice)
                     doc_transportista = get_doc_transportista(doc.transporter)
@@ -120,7 +125,7 @@ def send_document(company, invoice, doctype):
                     content = {
                         "serie_documento": serie,
                         "numero_documento": correlativo,
-                        "fecha_de_emision": doc.get_formatted("posting_date"),
+                        "fecha_de_emision": formatdate(doc.get_formatted("posting_date"), "yyyy-mm-dd"),
                         "hora_de_emision": doc.get_formatted("posting_time"),
                         "codigo_tipo_documento": "09",
                         "datos_del_emisor": {
@@ -179,6 +184,13 @@ def send_document(company, invoice, doctype):
                             "codigo_interno": item.item_code,
                              "cantidad": item.qty
                     })
+                if frappe.get_value("Configuracion", company, "send_email_invoice") == 1:
+                    if content.get("acciones"):
+                        content["acciones"]["envial_email"] = "true"
+                    else:
+                        content["acciones"] = { 
+                            "enviar_email": "true"
+                        }
                 response = requests.post(url, headers=headers, data=json.dumps(content))
                 data = json.loads(response.content)
             except:

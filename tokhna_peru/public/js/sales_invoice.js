@@ -22,6 +22,7 @@ function get_document_series(frm, cdt, cdn) {
 		}
 	});
 }
+
 function get_document_transaction(frm, cdt, cdn) {
 	frappe.call({
 		type: "GET",
@@ -36,6 +37,7 @@ function get_document_transaction(frm, cdt, cdn) {
 		}
 	});
 }
+
 function get_product_anticipo(frm, cdt, cdn) {
 	if (frm.doc.codigo_transaccion_sunat == "4") {
 		frappe.call({
@@ -73,6 +75,7 @@ function get_product_anticipo(frm, cdt, cdn) {
 		cur_frm.toggle_display("sales_invoice_advance", false);
 	}
 }
+
 function get_sales_invoice_advance(frm, cdt, cdn) {
 	if (frm.doc.codigo_transaccion_sunat == "4") {
 		cur_frm.set_query("sales_invoice_advance" , function(){
@@ -88,6 +91,7 @@ function get_sales_invoice_advance(frm, cdt, cdn) {
 		frappe.model.set_value(cdt, cdn, "sales_invoice_advance", "");
 	}
 }
+
 function get_document_customer(frm, cdt, cdn){
 	return new Promise(function(resolve, reject) {
 		if (frm.doc.customer){
@@ -102,19 +106,38 @@ function get_document_customer(frm, cdt, cdn){
 		get_document_transaction(frm, cdt, cdn);
 	});
 }
+
+function set_pos_profile(frm, cdt, cdn) {
+	if (frm.doc.__islocal == 1 && frm.doc.naming_series != "" && frm.doc.customer != ""){
+		frappe.db.get_list("POS Profile", {filters: {selling_price_list: frm.doc.selling_price_list, naming_series: frm.doc.naming_series}}).then(pos_profiles => {
+			$.each(pos_profiles, function(i, row){
+				frappe.db.get_doc("POS Profile", row.name).then(pos_profile => {
+					$.each(pos_profile.applicable_for_users, function(i, row){
+						console.log(pos_profile);
+						if (row.user == frappe.session.user){
+							frappe.model.set_value(cdt, cdn, "is_pos", 1);
+							frappe.model.set_value(cdt, cdn, "pos_profile", pos_profile.name);
+							frappe.model.set_value(cdt, cdn, "set_warehouse", pos_profile.warehouse);
+							frm.refresh_fields();
+						}
+					});
+				});
+			});
+		});
+	}
+}
+
 frappe.ui.form.on("Sales Invoice", {
 	tipo_transaccion_sunat: function(frm, cdt, cdn){
 		get_product_anticipo(frm, cdt, cdn);
 		get_sales_invoice_advance(frm, cdt, cdn);
-	}
-});
-frappe.ui.form.on("Sales Invoice", {
-	sales_invoice_advance: function(frm, cdt, cdn){
+    },
+    
+    sales_invoice_advance: function(frm, cdt, cdn){
 		get_product_anticipo(frm, cdt, cdn);
-	}
-});
-frappe.ui.form.on("Sales Invoice", {
-	customer: function(frm, cdt, cdn) {
+    },
+    
+    customer: function(frm, cdt, cdn) {
 		if (frm.doc.codigo_tipo_documento) {
 			get_document_series(frm, cdt, cdn);
             get_document_transaction(frm, cdt, cdn);
@@ -125,29 +148,25 @@ frappe.ui.form.on("Sales Invoice", {
 			frappe.model.set_value(cdt, cdn, "tipo_transaccion_sunat", null);
 			frappe.model.set_value(cdt, cdn, "codigo_transaccion_sunat", null);
 		}
-	}
-});
-frappe.ui.form.on("Sales Invoice", {
-	naming_series: function(frm, cdt, cdn) {
+    },
+    
+    naming_series: function(frm, cdt, cdn) {
 		set_pos_profile(frm, cdt, cdn);
-	}
-});
-frappe.ui.form.on("Sales Invoice", {
-	contingencia: function(frm, cdt, cdn) {
+    },
+    
+    contingencia: function(frm, cdt, cdn) {
 		if (frm.doc.codigo_tipo_documento && frm.doc.contingencia == 1) {
 			get_document_series(frm, cdt, cdn);
 		}
-	}
-});
-frappe.ui.form.on("Sales Invoice", {
-	is_return: function(frm, cdt, cdn) {
+    },
+    
+    is_return: function(frm, cdt, cdn) {
 		if (frm.doc.codigo_tipo_documento && frm.doc.is_return == 1) {
 			get_document_series(frm, cdt, cdn);
 		}
-	}
-});
-frappe.ui.form.on('Sales Invoice', {
-	before_submit: function(frm, cdt, cdn) {
+    },
+    
+    before_submit: function(frm, cdt, cdn) {
 		if(!frm.doc.customer_address && frm.doc.codigo_tipo_documento != "-"){
             frappe.validated = false;
             frappe.throw("Customer Address is missing");
@@ -167,22 +186,32 @@ frappe.ui.form.on('Sales Invoice', {
                 });
 			}).then(function(values) {
                 debugger;
-                if (values.message.data.state_type_description == "Aceptado"){
-                    frappe.model.set_value(cdt, cdn, "estado_sunat", values.message.data.state_type_description);
-                    frappe.model.set_value(cdt, cdn, "respuesta_sunat", data.message.response.description);
-                    frappe.model.set_value(cdt, cdn, "enlace_pdf", data.message.response.links.pdf);
-                    frappe.model.set_value(cdt, cdn, "codigo_hash_sunat", data.message.data.hash);
-                    frappe.model.set_value(cdt, cdn, "external_id", data.message.data.external_id);
-                } else {
+                if (values.message){
+                    if (values.message.data){
+                        if (values.message.data.state_type_description == "Aceptado" || values.message.data.state_type_description == "Registrado"){
+                            frappe.model.set_value(cdt, cdn, "estado_sunat", values.message.data.state_type_description);
+                            frappe.model.set_value(cdt, cdn, "enlace_pdf", values.message.links.pdf);
+                            frappe.model.set_value(cdt, cdn, "codigo_hash_sunat", values.message.data.hash);
+                            frappe.model.set_value(cdt, cdn, "external_id", values.message.data.external_id);
+                            if (values.message.response) {
+                                frappe.model.set_value(cdt, cdn, "respuesta_sunat", values.message.response.description);
+                            }
+                        } else {
+                            frappe.validated = false;
+                            frappe.throw(data.message.response.description);
+                        }
+                    } else {
+                        frappe.validated = false;
+                    }                    
+                }   else {
                     frappe.validated = false;
-                    frappe.throw(data.message.response.description);
                 }
+                
 			});
         }
-	}
-});
-frappe.ui.form.on('Sales Invoice', {
-	refresh: function(frm, cdt, cdn) {
+    },
+    
+    refresh: function(frm, cdt, cdn) {
 		if (frm.doc.is_return == 1) {
 			get_document_series(frm, cdt, cdn);
 		}
@@ -191,10 +220,9 @@ frappe.ui.form.on('Sales Invoice', {
 				get_document_customer(frm, cdt, cdn);
 			}			
 		}
-	}
-});
-frappe.ui.form.on("Sales Invoice", {
-	before_cancel: function(frm, cdt, cdn) {
+    },
+    
+    before_cancel: function(frm, cdt, cdn) {
 		return new Promise(function(resolve, reject) {
 			frappe.call({
 				method: "tokhna_peru.tokhna_peru.facturacion_electronica.consult_document",
@@ -242,31 +270,11 @@ frappe.ui.form.on("Sales Invoice", {
 				}
 			} 
 		});
-	}
-});
-frappe.ui.form.on("Sales Invoice", {
-	onload: function(frm, cdt, cdn) {
+    },
+    
+    onload: function(frm, cdt, cdn) {
 		if (frm.doc.codigo_qr_sunat === undefined && frm.doc.estado_sunat == "Aceptado") {
 			frappe.model.set_value(cdt, cdn, "estado_sunat", null);
 		}
 	}
 });
-function set_pos_profile(frm, cdt, cdn) {
-	if (frm.doc.__islocal == 1 && frm.doc.naming_series != "" && frm.doc.customer != ""){
-		frappe.db.get_list("POS Profile", {filters: {selling_price_list: frm.doc.selling_price_list, naming_series: frm.doc.naming_series}}).then(pos_profiles => {
-			$.each(pos_profiles, function(i, row){
-				frappe.db.get_doc("POS Profile", row.name).then(pos_profile => {
-					$.each(pos_profile.applicable_for_users, function(i, row){
-						console.log(pos_profile);
-						if (row.user == frappe.session.user){
-							frappe.model.set_value(cdt, cdn, "is_pos", 1);
-							frappe.model.set_value(cdt, cdn, "pos_profile", pos_profile.name);
-							frappe.model.set_value(cdt, cdn, "set_warehouse", pos_profile.warehouse);
-							frm.refresh_fields();
-						}
-					});
-				});
-			});
-		});
-	}
-}
