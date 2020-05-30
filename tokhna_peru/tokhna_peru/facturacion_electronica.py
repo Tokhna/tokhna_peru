@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 import frappe
 from tokhna_peru.tokhna_peru.doctype.autenticacion.autenticacion import get_autentication, get_url
+from tokhna_peru.tokhna_peru.doctype.configuracion.configuracion import get_unaffected_config
 from tokhna_peru.tokhna_peru.utils import get_serie_correlativo, get_moneda, get_igv, get_tipo_producto, get_serie_online, get_doc_conductor, get_doc_transportista, get_address_information, get_ibp
 import requests
 import json
@@ -10,7 +11,7 @@ import datetime
 @frappe.whitelist()
 def send_document(company, invoice, doctype):
     tipo, serie, correlativo = get_serie_correlativo(invoice)
-    online = get_serie_online(company, tipo + "-" + serie)
+    online = get_serie_online(company, tipo + "-" + serie + "-")
     if online:
         url = get_url(company)
         headers = get_autentication(company)
@@ -29,6 +30,8 @@ def send_document(company, invoice, doctype):
                     else:
                         igv = monto_impuesto = igv_inc = 0
                         ibp = monto_ibp = ibp_inc = 0
+                        if igv == 0 and get_unaffected_config(company) != 1:
+                            return ""
                     if doc.customer_address:
                         address = get_address_information(doc.customer_address)
                     if doc.codigo_transaccion_sunat == "4":
@@ -36,6 +39,7 @@ def send_document(company, invoice, doctype):
                         monto_anticipo_neto = round(advance.net_total, 2)
                         anticipo_total = round(advance.grand_total)
                         igv_anticipo, anticipo_amount, anticipo_inc = get_igv(company, advance.name, doctype)
+                        tipo_anticipo, serie_anticipo, correlativo_anticipo = get_serie_correlativo(doc.sales_invoice_advance)
                     if doc.is_return == 1:
                         tipo, return_serie, return_correlativo = get_serie_correlativo(doc.return_against)
                         codigo_nota_credito = doc.codigo_nota_credito
@@ -80,13 +84,13 @@ def send_document(company, invoice, doctype):
                         content['items'].append({
                             "codigo_interno": item.item_code,
                             "descripcion": item.item_name,
-                            "codigo_producto_sunat": "51121703",
+                            "codigo_producto_sunat": item.codigo_sunat,
                             "unidad_de_medida": tipo_producto,
                             "cantidad": str(item.qty * mult),
                             "valor_unitario": str(round(item.net_rate, 2)),
                             "codigo_tipo_precio": "01",
                             "precio_unitario": str(round(item.rate, 2)) if igv_inc == 1 else str(round(item.net_rate, 2) * (1 + igv)),
-                            "codigo_tipo_afectacion_igv": "10",
+                            "codigo_tipo_afectacion_igv": "10" if not igv==0  else "30",
                             "total_base_igv": str(round(item.net_amount, 2) * mult),
                             "porcentaje_igv": 18,
                             "total_igv": str(round(item.net_amount * igv / 100, 2) * mult),
@@ -94,6 +98,12 @@ def send_document(company, invoice, doctype):
                             "total_valor_item": str(round(item.net_amount, 2) * mult),
                             "total_item": str(round(item.amount, 2) * mult) if igv_inc == 1 else str(round(item.net_amount, 2) * mult * (1 + igv)),
                     })
+                    if doc.codigo_comprobante == "07":
+                        content['codigo_tipo_nota'] = doc.codigo_nota_credito
+                        content['motivo_o_sustento_de_nota'] = doc.tipo_nota_credito
+                        content['documento_afectado'] = {
+                            "external_id": doc.external_id
+                        }
                 elif doctype == "Delivery Note":
                     doc = frappe.get_doc("Delivery Note", invoice)
                     doc_transportista = get_doc_transportista(doc.transporter)
@@ -210,15 +220,16 @@ def cancel_document(company, invoice, doctype, motivo):
         url = get_url(company)
         headers = get_autentication(company)
         if url != "" and headers != "":
-            data = consult_document(company, invoice, doctype)
-            if data.get("codigo_hash"):
+            doc = frappe.get_doc("Sales Invoice", invoice)
+            if doc.get("codigo_hash"):
                 content = {
-                    "operacion": "generar_anulacion",
-                    "tipo_de_comprobante": data["tipo_de_comprobante"],
-                    "serie": data["serie"],
-                    "numero": data["numero"],
-                    "motivo": motivo,
-                    "codigo_unico": ""
+                "fecha_de_emision_de_documentos": doc.get_formatted("posting_date"),
+                "documentos": [
+                        {
+                        "external_id": doc.external_id,
+                        "motivo_anulacion": motivo
+                        }
+                    ]
                 }
                 response = requests.post(url, headers=headers, data=json.dumps(content))
                 if doctype == "Sales Invoice":

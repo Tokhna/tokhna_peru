@@ -7,6 +7,7 @@
  "field_order": [
   "sc_company",
   "company",
+  "allow_unaffected_invoices",
   "sc_configuracion_series",
   "configuracion_series",
   "salto_impuestos",
@@ -79,9 +80,15 @@
    "fieldtype": "Link",
    "label": "Percepci\u00f3n",
    "options": "Sales Taxes and Charges Template"
+  },
+  {
+   "default": "0",
+   "fieldname": "allow_unaffected_invoices",
+   "fieldtype": "Check",
+   "label": "Permitir Comprobantes Inafectos"
   }
  ],
- "modified": "2020-04-02 11:39:58.435193",
+ "modified": "2020-05-29 15:20:59.126247",
  "modified_by": "Administrator",
  "module": "Tokhna Peru",
  "name": "Configuracion",

@@ -1,0 +1,1 @@
+cur_frm.add_fetch('tipo_documento_identidad', 'codigo_tipo_documento', 'codigo_tipo_documento');
