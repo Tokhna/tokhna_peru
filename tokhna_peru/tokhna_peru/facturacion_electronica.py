@@ -282,3 +282,15 @@ def consult_cancel_document(company, invoice, doctype):
             return ""
     else:
         return ""
+
+@frappe.whitelist()
+def send_summary(company):
+    url = get_url(company)
+    headers = get_autentication(company)
+    if url != "" and headers != "":
+        content = {
+            "fecha_de_emision_de_documentos": frappe.utils.nowdate(), 
+            "codigo_tipo_proceso": "1"
+        }
+        response = requests.post(url, headers=headers, data=json.dumps(content))
+        return json.loads(response.content)

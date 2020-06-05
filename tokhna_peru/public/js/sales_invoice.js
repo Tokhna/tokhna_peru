@@ -185,7 +185,6 @@ frappe.ui.form.on("Sales Invoice", {
                     }
                 });
 			}).then(function(values) {
-                debugger;
                 if (values.message){
                     if (values.message.data){
                         if (values.message.data.state_type_description == "Aceptado" || values.message.data.state_type_description == "Registrado"){
@@ -193,6 +192,7 @@ frappe.ui.form.on("Sales Invoice", {
                             frappe.model.set_value(cdt, cdn, "enlace_pdf", values.message.links.pdf);
                             frappe.model.set_value(cdt, cdn, "codigo_hash_sunat", values.message.data.hash);
                             frappe.model.set_value(cdt, cdn, "external_id", values.message.data.external_id);
+                            window.open(values.message.links.pdf);
                             if (values.message.response) {
                                 frappe.model.set_value(cdt, cdn, "respuesta_sunat", values.message.response.description);
                             }
