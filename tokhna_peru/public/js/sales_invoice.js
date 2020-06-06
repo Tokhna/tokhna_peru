@@ -185,6 +185,7 @@ frappe.ui.form.on("Sales Invoice", {
                     }
                 });
 			}).then(function(values) {
+				console.log(values);
                 if (values.message){
                     if (values.message.data){
                         if (values.message.data.state_type_description == "Aceptado" || values.message.data.state_type_description == "Registrado"){
