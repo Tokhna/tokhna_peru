@@ -186,7 +186,7 @@ def send_document(company, invoice, doctype):
                     })
                 if frappe.get_value("Configuracion", company, "send_email_invoice") == 1:
                     if content.get("acciones"):
-                        content["acciones"]["envial_email"] = "true"
+                        content["acciones"]["enviar_email"] = "true"
                     else:
                         content["acciones"] = { 
                             "enviar_email": "true"

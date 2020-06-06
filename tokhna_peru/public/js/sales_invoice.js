@@ -189,10 +189,10 @@ frappe.ui.form.on("Sales Invoice", {
                     if (values.message.data){
                         if (values.message.data.state_type_description == "Aceptado" || values.message.data.state_type_description == "Registrado"){
                             frappe.model.set_value(cdt, cdn, "estado_sunat", values.message.data.state_type_description);
-                            frappe.model.set_value(cdt, cdn, "enlace_pdf", values.message.links.pdf);
+                            frappe.model.set_value(cdt, cdn, "enlace_pdf", values.message.links.pdf.replace("downloads", "print").replace("pdf/", ""));
                             frappe.model.set_value(cdt, cdn, "codigo_hash_sunat", values.message.data.hash);
                             frappe.model.set_value(cdt, cdn, "external_id", values.message.data.external_id);
-                            window.open(values.message.links.pdf);
+                            window.open(values.message.links.pdf.replace("downloads", "print").replace("pdf/", ""));
                             if (values.message.response) {
                                 frappe.model.set_value(cdt, cdn, "respuesta_sunat", values.message.response.description);
                             }

@@ -9,6 +9,7 @@
   "company",
   "allow_unaffected_invoices",
   "send_email_invoice",
+  "send_email_invoice_erpnext",
   "invoice_format",
   "sc_configuracion_series",
   "configuracion_series",
@@ -94,6 +95,12 @@
    "fieldname": "send_email_invoice",
    "fieldtype": "Check",
    "label": "Enviar Comprobante por Email"
+  },
+  {
+    "default": "0",
+    "fieldname": "send_email_invoice_erpnext",
+    "fieldtype": "Check",
+    "label": "Enviar Comprobante por Email (ERPNEXT)"
   },
   {
    "fieldname": "invoice_format",
