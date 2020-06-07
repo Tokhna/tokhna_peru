@@ -134,7 +134,7 @@ cur_frm.page.add_action_item("Send Electronic Invoice", function() {
 			"company": cur_frm.doc.company,
 			"invoice": cur_frm.doc.name
 		}
-	})
+	});
 });
 
 frappe.ui.form.on("Sales Invoice", {
@@ -206,7 +206,14 @@ frappe.ui.form.on("Sales Invoice", {
                             window.open(values.message.links.pdf.replace("downloads", "print").replace("pdf/", ""));
                             if (values.message.response) {
                                 frappe.model.set_value(cdt, cdn, "respuesta_sunat", values.message.response.description);
-                            }
+							}
+							frappe.call({
+								method: "tokhna_peru.tokhna_peru.facturacion_electronica.send_invoice_email",
+								args: {
+									"company": cur_frm.doc.company,
+									"invoice": cur_frm.doc.name
+								}
+							});
                         } else {
                             frappe.validated = false;
                             frappe.throw(data.message.response.description);
