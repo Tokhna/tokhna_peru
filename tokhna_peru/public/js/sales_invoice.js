@@ -127,6 +127,16 @@ function set_pos_profile(frm, cdt, cdn) {
 	}
 }
 
+cur_frm.page.add_action_item("Send Electronic Invoice", function() {
+	frappe.call({
+		method: "tokhna_peru.tokhna_peru.facturacion_electronica.send_invoice_email",
+		args: {
+			"company": cur_frm.doc.company,
+			"invoice": cur_frm.doc.name
+		}
+	})
+});
+
 frappe.ui.form.on("Sales Invoice", {
 	tipo_transaccion_sunat: function(frm, cdt, cdn){
 		get_product_anticipo(frm, cdt, cdn);

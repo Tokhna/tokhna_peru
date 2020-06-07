@@ -193,6 +193,9 @@ def send_document(company, invoice, doctype):
                         }
                 response = requests.post(url, headers=headers, data=json.dumps(content))
                 data = json.loads(response.content)
+                if data.state_type_description == "Aceptado" or data.state_type_description == "Registrado":
+                    if frappe.get_value("Configuracion", company, "send_email_invoice_erpnext") == 1:
+                        send_invoice_email(company, invoice)
             except:
                 return ""
             else:
@@ -294,3 +297,12 @@ def send_summary(company):
         }
         response = requests.post(url, headers=headers, data=json.dumps(content))
         return json.loads(response.content)
+
+@frappe.whitelist()
+def send_invoice_email(company, invoice):
+    if frappe.get_value("Configuracion", company, "send_email_invoice_erpnext") == 1:
+        doc = frappe.get_doc("Sales Invoice", invoice)
+        customer_email = frappe.get_value("Address", doc.customer_address, "email_id")
+        if customer_email and doc.enlace_pdf:
+            frappe.sendmail(recipients=customer_email,subject="Comprobante Electrónico " + doc.name + " - COLEGIO PIONERO",
+            message="Estimado/a usuario le adjantamos su comprobante electrónico " + doc.enlace_pdf, delayed=False)
