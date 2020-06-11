@@ -15,7 +15,7 @@ fixtures = [
         "dt": "Custom Field",
         "filters": 
             [
-                ["dt", "in", ("Supplier", "Company", "Customer", "Sales Invoice", "Item", "Warehouse", "UOM")]
+                ["dt", "in", ("Supplier", "Company", "Customer", "Sales Invoice", "Item", "Warehouse", "UOM", "Purchase Invoice")]
             ]
     }
 ]
