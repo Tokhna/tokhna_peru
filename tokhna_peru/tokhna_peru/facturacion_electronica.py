@@ -244,56 +244,11 @@ def cancel_document(company, invoice, doctype, motivo):
                     ]
                 }
                 response = requests.post(url, headers=headers, data=json.dumps(content))
-                if doctype == "Sales Invoice":
-                    frappe.db.sql(
-                        """UPDATE `tabSales Invoice` SET estado_anulacion='En proceso', hora_cancelacion='{0}' WHERE name='{1}' and company='{2}'""".format(
-                            datetime.datetime.now(), invoice, company))
-                    frappe.db.commit()
-                elif doctype == 'Delivery Note':
-                    frappe.db.sql(
-                        """UPDATE `tabDelivery Note` SET estado_anulacion='En proceso', hora_cancelacion='{0}' WHERE name='{1}' and company='{2}'""".format(
-                            datetime.datetime.now(), invoice, company))
-                    frappe.db.commit()
                 return json.loads(response.content)
         else:
             return ""
     else:
         return ""
-
-@frappe.whitelist()
-def consult_cancel_document(company, invoice, doctype):
-    tipo, serie, correlativo = get_serie_correlativo(invoice)
-    online = get_serie_online(company, tipo + "-" + serie)
-    if online:
-        url = get_url(company)
-        headers = get_autentication(company)
-        if url != "" and headers != "":
-            data = consult_document(company, invoice, doctype)
-            if data.get("codigo_hash"):
-                content = {
-                    "operacion": "consultar_anulacion",
-                    "tipo_de_comprobante": data["tipo_de_comprobante"],
-                    "serie": data["serie"],
-                    "numero": data["numero"]
-                }
-                response = requests.post(url, headers=headers, data=json.dumps(content))
-                return json.loads(response.content)
-        else:
-            return ""
-    else:
-        return ""
-
-@frappe.whitelist()
-def send_summary(company):
-    url = get_url(company)
-    headers = get_autentication(company)
-    if url != "" and headers != "":
-        content = {
-            "fecha_de_emision_de_documentos": frappe.utils.nowdate(), 
-            "codigo_tipo_proceso": "1"
-        }
-        response = requests.post(url, headers=headers, data=json.dumps(content))
-        return json.loads(response.content)
 
 @frappe.whitelist()
 def send_invoice_email(company, invoice):
