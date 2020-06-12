@@ -241,23 +241,41 @@ frappe.ui.form.on("Sales Invoice", {
     },
     
     before_cancel: function(frm, cdt, cdn) {
-		return frappe.call({
-			method: "tokhna_peru.tokhna_peru.facturacion_electronica.consult_document",
-			args: {
-				'company': frm.doc.company,
-				'invoice': frm.doc.name,
-				'doctype': frm.doc.doctype
-			},
-			callback: function(r) {
-				if (r.message){
-					frappe.model.set_value(cdt, cdn, "estado_anulacion", r.message.success ? "Aceptado" : "Denegado");
-					if (r.message.success){
-						frappe.model.set_value(cdt, cdn, "anulacion_external_id", r.message.external_id);
-						frappe.model.set_value(cdt, cdn, "anulacion_ticket", r.message.ticket);
+		if (frappe.datetime.get_day_diff(frm.doc.posting_date, frappe.datetime.get_today()) < 7 && frm.doc.estado_anulacion != "En proceso" && frm.doc.external_id != undefined) {
+			return new Promise(function(resolve, reject) {
+				frappe.prompt([
+						{ 'fieldname': 'motivo', 'fieldtype': 'Data', 'label': 'Motivo de la cancelacion', 'reqd': 1 }
+					],
+					function(values) {
+						resolve(values);
+					},
+					'Cancelacion de Comprobante',
+					'Anular'
+				);
+			}).then(function(values) {
+				frappe.validated = false;
+				frappe.call({
+					method: "tokhna_peru.tokhna_peru.facturacion_electronica.cancel_document",
+					args: {
+						'company': frm.doc.company,
+						'invoice': frm.docname,
+						'doctype': frm.doctype,
+						'motivo': values.motivo
+					},
+					callback: function(data) {
+						console.log(data);
+						if (data.message != "" && data.message.success){
+							frappe.msgprint("<b>Esperando respuesta de SUNAT</b>", 'Cancelación');
+						} else {
+							frappe.msgprint("<b>Error al generar anulación</b>", 'Cancelación');
+						}						
 					}
-				}
-			}
-		});
+				});
+			});
+		} else {
+			frappe.validated = false;
+			frappe.msgprint("<b>Documento no se puede anular o esta en proceso de anulación</b>", 'Cancelación');
+		}
     },
     
     onload: function(frm, cdt, cdn) {

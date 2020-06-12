@@ -227,13 +227,13 @@ def consult_document(company, invoice, doctype):
 @frappe.whitelist()
 def cancel_document(company, invoice, doctype, motivo):
     tipo, serie, correlativo = get_serie_correlativo(invoice)
-    online = get_serie_online(company, tipo + "-" + serie)
+    online = get_serie_online(company, tipo + "-" + serie + "-")
     if online:
         url = get_url(company)
         headers = get_autentication(company)
         if url != "" and headers != "":
             doc = frappe.get_doc("Sales Invoice", invoice)
-            if doc.get("codigo_hash"):
+            if doc.get("external_id"):
                 content = {
                 "fecha_de_emision_de_documentos": doc.get_formatted("posting_date"),
                 "documentos": [
@@ -242,6 +242,41 @@ def cancel_document(company, invoice, doctype, motivo):
                         "motivo_anulacion": motivo
                         }
                     ]
+                }
+                if doc.codigo_tipo_documento != "6":
+                    content["codigo_tipo_proceso"] = "3",
+                response = requests.post(url, headers=headers, data=json.dumps(content))
+                json_response = json.loads(response.content)
+                if json_response.get('success'):
+                    if doctype == "Sales Invoice":
+                        frappe.db.sql(
+                            """UPDATE `tabSales Invoice` SET estado_anulacion='En proceso', hora_cancelacion='{0}', anulacion_ticket='{1}', anulacion_external_id='{2}' WHERE name='{3}' and company='{4}'""".format(
+                                datetime.datetime.now(), json_response.get('data').get('ticket'), json_response.get('data').get('external_id'), invoice, company))
+                        frappe.db.commit()
+                    elif doctype == 'Delivery Note':
+                        frappe.db.sql(
+                            """UPDATE `tabDelivery Note` SET estado_anulacion='En proceso', hora_cancelacion='{0}', anulacion_ticket='{1}', anulacion_external_id='{2}' WHERE name='{3}' and company='{4}'""".format(
+                                datetime.datetime.now(), json_response.get('data').get('ticket'), json_response.get('data').get('external_id'), invoice, company))
+                        frappe.db.commit()
+                return json_response
+        else:
+            return ""
+    else:
+        return ""
+
+@frappe.whitelist()
+def consult_cancel_document(company, invoice, doctype):
+    tipo, serie, correlativo = get_serie_correlativo(invoice)
+    online = get_serie_online(company, tipo + "-" + serie)
+    if online:
+        url = get_url(company)
+        headers = get_autentication(company)
+        if url != "" and headers != "":
+            doc = frappe.get_doc(doctype, invoice)
+            if doc.get("estado_anulacion") == "En proceso":
+                content = {
+                    "external_id": doc.get('external_id'),
+                    "ticket": doc.get('anulacion_ticket')
                 }
                 response = requests.post(url, headers=headers, data=json.dumps(content))
                 return json.loads(response.content)
