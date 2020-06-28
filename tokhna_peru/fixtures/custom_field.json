@@ -704,7 +704,7 @@
   "dt": "Purchase Invoice",
   "fetch_from": null,
   "fetch_if_empty": 0,
-  "fieldname": "tipo_documento_dentidad",
+  "fieldname": "tipo_documento_identidad",
   "fieldtype": "Link",
   "hidden": 0,
   "ignore_user_permissions": 0,
