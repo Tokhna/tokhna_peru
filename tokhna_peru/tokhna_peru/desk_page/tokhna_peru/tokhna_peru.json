@@ -1,0 +1,39 @@
+{
+ "cards": [
+  {
+   "hidden": 0,
+   "label": "Facturaci\u00f3n Electr\u00f3nica",
+   "links": "[\n    {\n        \"type\": \"doctype\",\n        \"name\": \"Autenticacion\",\n    \t\"onboard\": 1\n    },\n    {\n        \"type\": \"doctype\",\n        \"name\": \"Configuracion\",\n    \t\"onboard\": 1\n    }\n    \n]"
+  },
+  {
+   "hidden": 0,
+   "label": "Libros Electronic\u00f3s",
+   "links": "[\n    {\n        \"type\": \"doctype\",\n        \"name\": \"Libro Electronico de Ventas\"\n    },\n    {\n        \"type\": \"doctype\",\n        \"name\": \"Libro Electronico de Compras\"\n    },\n    {\n        \"type\": \"doctype\",\n        \"name\": \"Libro Electronico Diario\"\n    },\n    {\n        \"type\": \"doctype\",\n        \"name\": \"Libro Electronico de Inventario Permanente Valorizado\"\n    },\n    {\n        \"type\": \"doctype\",\n        \"name\": \"Libro Electronico Mayor\"\n    }\n]"
+  },
+  {
+   "hidden": 0,
+   "label": "Configuraci\u00f3n",
+   "links": "[\n    {\n        \"type\": \"doctype\",\n        \"name\": \"Motivos de Traslado\"\n    },\n\t{\n        \"type\": \"doctype\",\n        \"name\": \"Tipos de Notas de Credito\"\n    },\n    {\n        \"type\": \"doctype\",\n        \"name\": \"Tipos de Notas de Debito\"\n    },\n    {\n        \"type\": \"doctype\",\n        \"name\": \"Tipos de Transaccion Sunat\"\n    },\n    {\n        \"type\": \"doctype\",\n        \"name\": \"Tipos de Transporte\"\n    },\n    {\n        \"type\": \"doctype\",\n        \"name\": \"Catalogo de Existencias\"\n    },\n    {\n        \"type\": \"doctype\",\n        \"name\": \"Tipos de Comprobante\"\n    },\n    {\n        \"type\": \"doctype\",\n        \"name\": \"Tipos de Documento de Identidad\"\n    },\n    {\n        \"type\": \"doctype\",\n        \"name\": \"Tipos de Existencia\"\n    },\n    {\n        \"type\": \"doctype\",\n        \"name\": \"Tipos de Operaciones\"\n    },\n    {\n        \"type\": \"doctype\",\n        \"name\": \"Tipos de Pago\"\n    },\n    {\n        \"type\": \"doctype\",\n        \"name\": \"Unidades de Medida\"\n    }\n]"
+  }
+ ],
+ "category": "Modules",
+ "charts": [],
+ "creation": "2020-07-07 18:44:40.099580",
+ "developer_mode_only": 0,
+ "disable_user_customization": 0,
+ "docstatus": 0,
+ "doctype": "Desk Page",
+ "extends_another_page": 0,
+ "hide_custom": 0,
+ "idx": 0,
+ "is_standard": 1,
+ "label": "Tokhna Peru",
+ "modified": "2020-07-07 18:50:19.297866",
+ "modified_by": "Administrator",
+ "module": "Tokhna Peru",
+ "name": "Tokhna Peru",
+ "owner": "Administrator",
+ "pin_to_bottom": 0,
+ "pin_to_top": 0,
+ "shortcuts": []
+}
