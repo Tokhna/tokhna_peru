@@ -214,17 +214,22 @@ frappe.ui.form.on("Sales Invoice", {
 									"invoice": cur_frm.doc.name
 								}
 							});
-                        } else {
+						} 
+						else {
                             frappe.validated = false;
                             frappe.throw(data.message.response.description);
                         }
-                    } else {
+					} 
+					else if (values.message.message.includes("ya se encuentra registrado")){
+						console.log("Comprobante registrado");
+					}
+					else {
                         frappe.validated = false;
                     }                    
-                }   else {
+				} 
+				else {
                     frappe.validated = false;
-                }
-                
+                }                
 			});
         }
     },
