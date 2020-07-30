@@ -61,10 +61,10 @@ def send_document(company, invoice, doctype):
                             "numero_documento": doc.tax_id,
                             "apellidos_y_nombres_o_razon_social": party_name,
                             "codigo_pais": address.get("pais"),
-                            "ubigeo": address.ubigeo if address.get("ubigeo") else "",
-                            "direccion": address.address if address.get("address") else "",
-                            "correo_electronico": address.email if address.get("email") else "",
-                            "telefono": address.phone if address.get("phone") else ""
+                            "ubigeo": address.get("ubigeo", ""),
+                            "direccion": address.get("address", ""),
+                            "correo_electronico": address.get("email"),
+                            "telefono": address.get("phone", "")
                         },
                         "totales": {
                             "total_exportacion": 0.00,
@@ -120,8 +120,7 @@ def send_document(company, invoice, doctype):
                         customer_address = get_address_information(doc.shipping_address_name)
                     else:
                         customer_address = address
-                    if doc.company_address:
-                        company_address = get_address_information((doc.company_address))
+                    company_address = get_address_information(doc.company_address)
                     content = {
                         "serie_documento": serie,
                         "numero_documento": correlativo,
@@ -133,8 +132,8 @@ def send_document(company, invoice, doctype):
                             "ubigeo": company_address.ubigeo,
                             "direccion": company_address.address,
                             "correo_electronico": company_address.email,
-                            "telefono": address.phone if address.get("phone") else "",
-                            "codigo_del_domicilio_fiscal": address.code if address.get("code") else ""
+                            "telefono": address.get("phone", ""),
+                            "codigo_del_domicilio_fiscal": address.get("code", "")
                         },
                         "datos_del_cliente_o_receptor":{
                             "codigo_tipo_documento_identidad": doc.codigo_tipo_documento,
