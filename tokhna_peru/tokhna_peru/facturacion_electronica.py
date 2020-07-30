@@ -48,35 +48,35 @@ def send_document(company, invoice, doctype):
                         mult = -1
                     content = {
                         "serie_documento": serie,
-                        "numero_documento": correlativo,
+                        "numero_documento": int(correlativo),
                         "fecha_de_emision": formatdate(doc.get_formatted("posting_date"), "yyyy-mm-dd"),
                         "hora_de_emision": doc.get_formatted("posting_time"),
                         "codigo_tipo_operacion": "0101",
                         "codigo_tipo_documento": doc.codigo_comprobante,
                         "codigo_tipo_moneda": doc.currency,
                         "fecha_de_vencimiento": formatdate(doc.get_formatted("due_date"), "yyyy-mm-dd"),
-                        "numero_orden_de_compra": doc.po_no,
+                        "numero_orden_de_compra": doc.po_no or "",
                         "datos_del_cliente_o_receptor": {
                             "codigo_tipo_documento_identidad": doc.codigo_tipo_documento,
                             "numero_documento": doc.tax_id,
                             "apellidos_y_nombres_o_razon_social": party_name,
                             "codigo_pais": address.get("pais"),
-                            "ubigeo": address.get("ubigeo", ""),
+                            "ubigeo": address.get("ubigeo", "") or "",
                             "direccion": address.get("address", ""),
                             "correo_electronico": address.get("email"),
                             "telefono": address.get("phone", "")
                         },
                         "totales": {
                             "total_exportacion": 0.00,
-                            "total_operaciones_gravadas": str(round(doc.net_total - monto_anticipo_neto, 2) * mult) if not igv==0 else 0.00,
-                            "total_operaciones_inafectas": str(round(doc.net_total - monto_anticipo_neto, 2) * mult) if igv==0 else 0.00,
+                            "total_operaciones_gravadas": float(round(doc.net_total - monto_anticipo_neto, 2) * mult) if not igv==0 else 0.00,
+                            "total_operaciones_inafectas": float(round(doc.net_total - monto_anticipo_neto, 2) * mult) if igv==0 else 0.00,
                             "total_operaciones_exoneradas": 0.00,
                             "total_operaciones_gratuitas": 0.00,
-                            "total_igv": str(round(monto_impuesto - anticipo_amount, 2) * mult),
-                            "total_impuestos_bolsa_plastica": str(round(monto_ibp, 2) * mult),
-                            "total_impuestos": str(round(monto_impuesto - anticipo_amount, 2) * mult),
-                            "total_valor": str(round(doc.net_total - monto_anticipo_neto, 2) * mult),
-                            "total_venta": str(round(doc.grand_total - anticipo_total, 2) * mult)
+                            "total_igv": float(round(monto_impuesto - anticipo_amount, 2) * mult),
+                            "total_impuestos_bolsa_plastica": float(round(monto_ibp, 2) * mult),
+                            "total_impuestos": float(round(monto_impuesto - anticipo_amount, 2) * mult),
+                            "total_valor": float(round(doc.net_total - monto_anticipo_neto, 2) * mult),
+                            "total_venta": float(round(doc.grand_total - anticipo_total, 2) * mult)
                         },
                     }
                     content['items'] = []
@@ -87,17 +87,17 @@ def send_document(company, invoice, doctype):
                             "descripcion": item.item_name,
                             "codigo_producto_sunat": frappe.get_value("Item", item.item_code, "codigo_sunat") or "",
                             "unidad_de_medida": tipo_producto,
-                            "cantidad": str(item.qty * mult),
-                            "valor_unitario": str(round(item.net_rate, 2)),
+                            "cantidad": float(item.qty * mult),
+                            "valor_unitario": float(round(item.net_rate, 2)),
                             "codigo_tipo_precio": "01",
-                            "precio_unitario": str(round(item.rate, 2)) if igv_inc == 1 else str(round(item.net_rate, 2) * (1 + igv)),
+                            "precio_unitario": float(round(item.rate, 2)) if igv_inc == 1 else float(round(item.net_rate, 2) * (1 + igv)),
                             "codigo_tipo_afectacion_igv": "10" if not igv==0  else "30",
-                            "total_base_igv": str(round(item.net_amount, 2) * mult),
+                            "total_base_igv": float(round(item.net_amount, 2) * mult),
                             "porcentaje_igv": 18,
-                            "total_igv": str(round(item.net_amount * igv / 100, 2) * mult),
-                            "total_impuestos": str(round(item.net_amount * igv / 100, 2) * mult),
-                            "total_valor_item": str(round(item.net_amount, 2) * mult),
-                            "total_item": str(round(item.amount, 2) * mult) if igv_inc == 1 else str(round(item.net_amount, 2) * mult * (1 + igv)),
+                            "total_igv": float(round(item.net_amount * igv / 100, 2) * mult),
+                            "total_impuestos": float(round(item.net_amount * igv / 100, 2) * mult),
+                            "total_valor_item": float(round(item.net_amount, 2) * mult),
+                            "total_item": float(round(item.amount, 2) * mult) if igv_inc == 1 else float(round(item.net_amount, 2) * mult * (1 + igv)),
                     })
                     if doc.codigo_comprobante == "07":
                         content['codigo_tipo_nota'] = doc.codigo_nota_credito
