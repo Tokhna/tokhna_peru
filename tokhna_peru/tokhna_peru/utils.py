@@ -304,25 +304,25 @@ def read_txt(file):
 	return data
 
 def get_serie_correlativo(name):
-    try:
-        tipo, serie, correlativo = name.split("-")
-    except:
-        return "", "", ""
-    else:
-        return tipo, serie, correlativo
+	try:
+		tipo, serie, correlativo = name.split("-")
+	except:
+		return "", "", ""
+	else:
+		return tipo, serie, correlativo
 
 def get_doc_transportista(name):
-    return frappe.get_doc("Supplier", name)
+	return frappe.get_doc("Supplier", name)
 
 def get_doc_conductor(name):
-    return frappe.get_doc("Driver", name)
+	return frappe.get_doc("Driver", name)
 
 def get_moneda(currency):
-    if currency == "PEN" or currency == "SOL":
-        moneda = 1
-    elif currency == "USD":
-        moneda = 2
-    return moneda
+	if currency == "PEN" or currency == "SOL":
+		moneda = 1
+	elif currency == "USD":
+		moneda = 2
+	return moneda
 
 def get_address_information(party_address):
 	address = frappe.get_doc("Address", party_address)
@@ -337,34 +337,38 @@ def get_address_information(party_address):
 	})
 
 def get_igv(company, name, doctype):
-    configuracion = frappe.get_doc("Configuracion", company)
-    if doctype == "Sales Invoice":
-        conf_tax = configuracion.igv
-        account_head = frappe.db.get_value("Sales Taxes and Charges", filters={"parent": conf_tax})
-        tax = frappe.get_doc("Sales Taxes and Charges", account_head)
-        doc_tax_name = frappe.db.get_value("Sales Taxes and Charges",
-                                           filters={"account_head": tax.account_head, "parent": name})
-        doc_tax = frappe.get_doc("Sales Taxes and Charges", doc_tax_name)
-    return doc_tax.rate, doc_tax.tax_amount, doc_tax.included_in_print_rate
+	configuracion = frappe.get_doc("Configuracion", company)
+	if doctype == "Sales Invoice":
+		conf_tax = configuracion.igv
+		account_head = frappe.db.get_value("Sales Taxes and Charges", filters={"parent": conf_tax})
+		tax = frappe.get_doc("Sales Taxes and Charges", account_head)
+		doc_tax_name = frappe.db.get_value("Sales Taxes and Charges",
+										   filters={"account_head": tax.account_head, "parent": name})
+		if doc_tax_name is None:
+			return 0, 0, 0
+		doc_tax = frappe.get_doc("Sales Taxes and Charges", doc_tax_name)
+	return doc_tax.rate, doc_tax.tax_amount, doc_tax.included_in_print_rate
 
 def get_ibp(company, name, doctype):
-    configuracion = frappe.get_doc("Configuracion", company)
-    if doctype == "Sales Invoice":
-        conf_tax = configuracion.ibp
-        account_head = frappe.db.get_value("Sales Taxes and Charges", filters={"parent": conf_tax})
-        tax = frappe.get_doc("Sales Taxes and Charges", account_head)
-        doc_tax_name = frappe.db.get_value("Sales Taxes and Charges",
-                                           filters={"account_head": tax.account_head, "parent": name})
-        doc_tax = frappe.get_doc("Sales Taxes and Charges", doc_tax_name)
-    return doc_tax.rate, doc_tax.tax_amount, doc_tax.included_in_print_rate
+	configuracion = frappe.get_doc("Configuracion", company)
+	if doctype == "Sales Invoice":
+		conf_tax = configuracion.ibp
+		account_head = frappe.db.get_value("Sales Taxes and Charges", filters={"parent": conf_tax})
+		tax = frappe.get_doc("Sales Taxes and Charges", account_head)
+		doc_tax_name = frappe.db.get_value("Sales Taxes and Charges",
+										   filters={"account_head": tax.account_head, "parent": name})
+		if doc_tax_name is None:
+			return 0, 0, 0
+		doc_tax = frappe.get_doc("Sales Taxes and Charges", doc_tax_name)
+	return doc_tax.rate, doc_tax.tax_amount, doc_tax.included_in_print_rate
 
 def get_tipo_producto(item_name):
-    producto = frappe.get_doc("Item", item_name)
-    if producto.item_group == "Servicios":
-        tipo_producto = "ZZ"
-    else:
-        tipo_producto = "NIU"
-    return tipo_producto
+	producto = frappe.get_doc("Item", item_name)
+	if producto.item_group == "Servicios":
+		tipo_producto = "ZZ"
+	else:
+		tipo_producto = "NIU"
+	return tipo_producto
 
 def get_serie_online(company, doc_serie):
 	online_serie =[]
