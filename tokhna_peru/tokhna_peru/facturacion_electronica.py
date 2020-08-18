@@ -234,7 +234,7 @@ def cancel_document(company, invoice, doctype, motivo):
             doc = frappe.get_doc("Sales Invoice", invoice)
             if doc.get("external_id"):
                 content = {
-                "fecha_de_emision_de_documentos": doc.get_formatted("posting_date"),
+                "fecha_de_emision_de_documentos": formatdate(doc.get_formatted("posting_date"), "yyyy-mm-dd"),
                 "documentos": [
                         {
                         "external_id": doc.external_id,
@@ -269,7 +269,7 @@ def consult_cancel_document(company, invoice, doctype):
     tipo, serie, correlativo = get_serie_correlativo(invoice)
     online = get_serie_online(company, tipo + "-" + serie)
     if online:
-        url = get_url(company)
+        url = get_url(company).replace('documents','voided/status')
         headers = get_autentication(company)
         if url != "" and headers != "":
             doc = frappe.get_doc(doctype, invoice)
