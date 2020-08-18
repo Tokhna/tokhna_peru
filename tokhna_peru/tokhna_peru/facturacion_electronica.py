@@ -228,7 +228,7 @@ def cancel_document(company, invoice, doctype, motivo):
     tipo, serie, correlativo = get_serie_correlativo(invoice)
     online = get_serie_online(company, tipo + "-" + serie + "-")
     if online:
-        url = get_url(company)
+        url = get_url(company).replace('documents','voided')
         headers = get_autentication(company)
         if url != "" and headers != "":
             doc = frappe.get_doc("Sales Invoice", invoice)
@@ -243,7 +243,8 @@ def cancel_document(company, invoice, doctype, motivo):
                     ]
                 }
                 if doc.codigo_tipo_documento != "6":
-                    content["codigo_tipo_proceso"] = "3",
+                    content["codigo_tipo_proceso"] = "3"
+                    url = get_url(company).replace('documents','summaries')
                 response = requests.post(url, headers=headers, data=json.dumps(content))
                 json_response = json.loads(response.content)
                 if json_response.get('success'):
