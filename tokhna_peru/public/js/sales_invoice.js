@@ -286,8 +286,11 @@ frappe.ui.form.on("Sales Invoice", {
     },
     
     onload: function(frm, cdt, cdn) {
-		if (frm.doc.codigo_qr_sunat === undefined && frm.doc.estado_sunat == "Aceptado") {
+		if (frm.doc.estado_sunat != undefined) {
 			frappe.model.set_value(cdt, cdn, "estado_sunat", null);
+			frappe.model.set_value(cdt, cdn, "enlace_pdf", null);
+			frappe.model.set_value(cdt, cdn, "codigo_hash_sunat", null);
+			frappe.model.set_value(cdt, cdn, "external_id", null);
 		}
 	}
 });
