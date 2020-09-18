@@ -49,12 +49,12 @@ def send_document(company, invoice, doctype):
                     content = {
                         "serie_documento": serie,
                         "numero_documento": int(correlativo),
-                        "fecha_de_emision": formatdate(doc.get_formatted("posting_date"), "yyyy-mm-dd"),
+                        "fecha_de_emision": formatdate(doc.get("posting_date"), "yyyy-mm-dd"),
                         "hora_de_emision": doc.get_formatted("posting_time"),
                         "codigo_tipo_operacion": "0101",
                         "codigo_tipo_documento": doc.codigo_comprobante,
                         "codigo_tipo_moneda": doc.currency,
-                        "fecha_de_vencimiento": formatdate(doc.get_formatted("due_date"), "yyyy-mm-dd"),
+                        "fecha_de_vencimiento": formatdate(doc.get("due_date"), "yyyy-mm-dd"),
                         "numero_orden_de_compra": doc.po_no or "",
                         "datos_del_cliente_o_receptor": {
                             "codigo_tipo_documento_identidad": doc.codigo_tipo_documento,
@@ -124,7 +124,7 @@ def send_document(company, invoice, doctype):
                     content = {
                         "serie_documento": serie,
                         "numero_documento": correlativo,
-                        "fecha_de_emision": formatdate(doc.get_formatted("posting_date"), "yyyy-mm-dd"),
+                        "fecha_de_emision": formatdate(doc.get("posting_date"), "yyyy-mm-dd"),
                         "hora_de_emision": doc.get_formatted("posting_time"),
                         "codigo_tipo_documento": "09",
                         "datos_del_emisor": {
