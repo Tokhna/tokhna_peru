@@ -195,7 +195,7 @@ def send_document(company, invoice, doctype):
                         }
                 
                 request_date = datetime.strptime(formatdate(doc.get("posting_date"), "yyyy-mm-dd"), '%Y-%m-%d')
-                if request_date <= datetime.now() and request_date > (datetime.now() - timedelta(days=5)):
+                if request_date <= datetime.now() and request_date > (datetime.now() - timedelta(days=7)):
                     response = requests.post(url, headers=headers, data=json.dumps(content))
                     data = json.loads(response.content)
                     request = frappe.get_doc({
