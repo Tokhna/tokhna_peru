@@ -94,13 +94,11 @@ after_install = "tokhna_peru.install.after_install"
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-#	}
-# }
+doc_events = {
+	"Sales Invoice": {
+		"before_submit": "tokhna_peru.tokhna_peru.facturacion_electronica.validate_default_fields",
+	}
+}
 
 # Scheduled Tasks
 # ---------------

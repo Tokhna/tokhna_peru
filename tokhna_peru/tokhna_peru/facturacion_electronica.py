@@ -7,7 +7,7 @@ from tokhna_peru.tokhna_peru.doctype.configuracion.configuracion import get_unaf
 from tokhna_peru.tokhna_peru.utils import get_serie_correlativo, get_moneda, get_igv, get_tipo_producto, get_serie_online, get_doc_conductor, get_doc_transportista, get_address_information, get_ibp
 import requests
 import json
-import datetime
+from datetime import datetime, timedelta
 
 @frappe.whitelist()
 def send_document(company, invoice, doctype):
@@ -19,6 +19,9 @@ def send_document(company, invoice, doctype):
         if url != "" and headers != "":
             return_type = return_serie = return_correlativo = codigo_nota_credito = party_name = ""
             address = {}
+            if frappe.db.exists("Electronic Invoice Request", invoice):
+                request = frappe.get_doc("Electronic Invoice Request", invoice)
+                return json.loads(request.response)
             try:
                 if doctype == "Sales Invoice":
                     mult  = 1
@@ -190,8 +193,19 @@ def send_document(company, invoice, doctype):
                         content["acciones"] = { 
                             "enviar_email": "true"
                         }
-                response = requests.post(url, headers=headers, data=json.dumps(content))
-                data = json.loads(response.content)
+                
+                request_date = datetime.strptime(formatdate(doc.get("posting_date"), "yyyy-mm-dd"), '%Y-%m-%d')
+                if request_date <= datetime.now() and request_date > (datetime.now() - timedelta(days=5)):
+                    response = requests.post(url, headers=headers, data=json.dumps(content))
+                    data = json.loads(response.content)
+                    request = frappe.get_doc({
+                        "doctype": "Electronic Invoice Request",
+                        "sales_invoice": invoice,
+                        "date": request_date,
+                        "request": json.dumps(content),
+                        "response": response.content
+                    })
+                    request.save(ignore_permissions=True)
             except:
                 return ""
             else:
@@ -251,12 +265,12 @@ def cancel_document(company, invoice, doctype, motivo):
                     if doctype == "Sales Invoice":
                         frappe.db.sql(
                             """UPDATE `tabSales Invoice` SET estado_anulacion='En proceso', hora_cancelacion='{0}', anulacion_ticket='{1}', anulacion_external_id='{2}' WHERE name='{3}' and company='{4}'""".format(
-                                datetime.datetime.now(), json_response.get('data').get('ticket'), json_response.get('data').get('external_id'), invoice, company))
+                                datetime.now(), json_response.get('data').get('ticket'), json_response.get('data').get('external_id'), invoice, company))
                         frappe.db.commit()
                     elif doctype == 'Delivery Note':
                         frappe.db.sql(
                             """UPDATE `tabDelivery Note` SET estado_anulacion='En proceso', hora_cancelacion='{0}', anulacion_ticket='{1}', anulacion_external_id='{2}' WHERE name='{3}' and company='{4}'""".format(
-                                datetime.datetime.now(), json_response.get('data').get('ticket'), json_response.get('data').get('external_id'), invoice, company))
+                                datetime.now(), json_response.get('data').get('ticket'), json_response.get('data').get('external_id'), invoice, company))
                         frappe.db.commit()
                 return json_response
         else:
@@ -293,3 +307,13 @@ def send_invoice_email(company, invoice):
         if customer_email and doc.enlace_pdf:
             frappe.sendmail(recipients=customer_email,subject="Comprobante Electrónico " + doc.name + " - COLEGIO PIONERO",
                 message="Estimado/a usuario le adjantamos su comprobante electrónico " + doc.enlace_pdf, delayed=False)
+
+def validate_default_fields(doc, method=None):
+    company = frappe.get_doc("Company", doc.company)
+    income_account = company.get('default_income_account')
+    cost_center = company.get('round_off_cost_center')
+    for item in doc.items:
+        if item.cost_center != cost_center:
+            item.cost_center = cost_center
+        if item.income_account != income_account:
+            item.income_account = income_account
