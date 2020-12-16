@@ -21,7 +21,9 @@ def send_document(company, invoice, doctype):
             address = {}
             if frappe.db.exists("Electronic Invoice Request", invoice):
                 request = frappe.get_doc("Electronic Invoice Request", invoice)
-                return json.loads(request.response)
+                response = json.loads(request.response)
+                if response.get('success'):
+                    return response
             try:
                 if doctype == "Sales Invoice":
                     mult  = 1
@@ -192,20 +194,28 @@ def send_document(company, invoice, doctype):
                     else:
                         content["acciones"] = { 
                             "enviar_email": "true"
-                        }
-                
+                        }                
                 request_date = datetime.strptime(formatdate(doc.get("posting_date"), "yyyy-mm-dd"), '%Y-%m-%d')
-                if request_date <= datetime.now() and request_date > (datetime.now() - timedelta(days=7)):
-                    response = requests.post(url, headers=headers, data=json.dumps(content))
+                today = datetime.today()
+                if request_date.year == today.year and request_date.month == today.month:
                     data = json.loads(response.content)
-                    request = frappe.get_doc({
-                        "doctype": "Electronic Invoice Request",
-                        "sales_invoice": invoice,
-                        "date": request_date,
-                        "request": json.dumps(content),
-                        "response": response.content
-                    })
-                    request.save(ignore_permissions=True)
+                    if request:
+                        request.request = json.dumps(content)
+                        request.response = response.content
+                        request.date = request_date
+                        request.save(ignore_permissions=True)
+                    else:
+                        response = requests.post(url, headers=headers, data=json.dumps(content))
+                        request = frappe.get_doc({
+                            "doctype": "Electronic Invoice Request",
+                            "sales_invoice": invoice,
+                            "date": request_date,
+                            "request": json.dumps(content),
+                            "response": response.content
+                        })
+                        request.save(ignore_permissions=True)
+                else:
+                    return ""
             except:
                 return ""
             else:
@@ -306,7 +316,7 @@ def send_invoice_email(company, invoice):
         customer_email = frappe.get_value("Address", doc.customer_address, "email_id")
         if customer_email and doc.enlace_pdf:
             frappe.sendmail(recipients=customer_email,subject="Comprobante Electrónico " + doc.name + " - COLEGIO PIONERO",
-                message="Estimado/a usuario le adjantamos su comprobante electrónico " + doc.enlace_pdf, delayed=False)
+                message="Estimado/a usuario le adjuntamos su comprobante electrónico " + doc.enlace_pdf, delayed=False)
 
 def validate_default_fields(doc, method=None):
     company = frappe.get_doc("Company", doc.company)

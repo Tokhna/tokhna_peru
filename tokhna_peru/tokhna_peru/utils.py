@@ -86,7 +86,7 @@ class Utils(NamingSeries):
 		elif periodo == 'Setiembre':
 			codigo_periodo = year + "09"
 		elif periodo == 'Octubre':
-			codigo_periodo = year + "610"
+			codigo_periodo = year + "10"
 		elif periodo == 'Noviembre':
 			codigo_periodo = year + "11"
 		elif periodo == 'Diciembre':
