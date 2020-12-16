@@ -196,16 +196,16 @@ def send_document(company, invoice, doctype):
                             "enviar_email": "true"
                         }                
                 request_date = datetime.strptime(formatdate(doc.get("posting_date"), "yyyy-mm-dd"), '%Y-%m-%d')
-                today = datetime.today()
+                today = datetime.now()
                 if request_date.year == today.year and request_date.month == today.month:
+                    response = requests.post(url, headers=headers, data=json.dumps(content))
                     data = json.loads(response.content)
                     if request:
                         request.request = json.dumps(content)
                         request.response = response.content
                         request.date = request_date
                         request.save(ignore_permissions=True)
-                    else:
-                        response = requests.post(url, headers=headers, data=json.dumps(content))
+                    else:                        
                         request = frappe.get_doc({
                             "doctype": "Electronic Invoice Request",
                             "sales_invoice": invoice,
