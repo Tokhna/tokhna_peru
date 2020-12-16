@@ -196,8 +196,7 @@ def send_document(company, invoice, doctype):
                             "enviar_email": "true"
                         }                
                 request_date = datetime.strptime(formatdate(doc.get("posting_date"), "yyyy-mm-dd"), '%Y-%m-%d')
-                today = datetime.now()
-                if request_date <= today and request_date > (today - timedelta(days=15)):
+                if request_date <= datetime.now() and request_date > (datetime.now() - timedelta(days=18)):
                     response = requests.post(url, headers=headers, data=json.dumps(content))
                     data = json.loads(response.content)
                     if request:
