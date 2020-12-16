@@ -17,7 +17,7 @@ def send_document(company, invoice, doctype):
         url = get_url(company)
         headers = get_autentication(company)
         if url != "" and headers != "":
-            return_type = return_serie = return_correlativo = codigo_nota_credito = party_name = ""
+            return_type = return_serie = return_correlativo = codigo_nota_credito = party_name = request = ""
             address = {}
             if frappe.db.exists("Electronic Invoice Request", invoice):
                 request = frappe.get_doc("Electronic Invoice Request", invoice)
@@ -196,7 +196,8 @@ def send_document(company, invoice, doctype):
                             "enviar_email": "true"
                         }                
                 request_date = datetime.strptime(formatdate(doc.get("posting_date"), "yyyy-mm-dd"), '%Y-%m-%d')
-                if request_date <= datetime.now() and request_date > (datetime.now() - timedelta(days=18)):
+                today = datetime.today()
+                if request_date.year == today.year and request_date.month == today.month:
                     response = requests.post(url, headers=headers, data=json.dumps(content))
                     data = json.loads(response.content)
                     if request:
