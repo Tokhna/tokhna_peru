@@ -93,6 +93,18 @@ class Utils(NamingSeries):
 			codigo_periodo = year + "12"
 		return codigo_periodo
 
+def tipo_de_comprobante(codigo):
+	if codigo == "01":
+		tipo_comprobante = 1
+	elif codigo == "03":
+		tipo_comprobante = 2
+	elif codigo == "07":
+		tipo_comprobante = 3
+	elif codigo == "08":
+		tipo_comprobante = 4
+	elif codigo == "09":
+		tipo_comprobante = 7
+	return tipo_comprobante
 
 @frappe.whitelist()
 def send_file_to_client(file, tipo, nombre):
@@ -361,6 +373,12 @@ def get_ibp(company, name, doctype):
 			return 0, 0, 0
 		doc_tax = frappe.get_doc("Sales Taxes and Charges", doc_tax_name)
 	return doc_tax.rate, doc_tax.tax_amount, doc_tax.included_in_print_rate
+
+@frappe.whitelist()
+def get_plastic_bags_information(company):
+	configuracion = frappe.get_doc("Configuracion", company)
+	impuesto = configuracion.ibp
+	return frappe.get_doc("Sales Taxes and Charges Template", impuesto)
 
 def get_tipo_producto(item_name):
 	producto = frappe.get_doc("Item", item_name)

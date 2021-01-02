@@ -1,96 +1,104 @@
 {
- "autoname": "field:sales_invoice",
- "creation": "2020-09-21 07:49:48.124086",
- "doctype": "DocType",
- "editable_grid": 1,
- "engine": "InnoDB",
- "field_order": [
-  "sales_invoice",
-  "date",
-  "request",
-  "response"
- ],
- "fields": [
-  {
-   "fieldname": "sales_invoice",
-   "fieldtype": "Link",
-   "label": "Sales Invoice",
-   "options": "Sales Invoice",
-   "unique": 1
-  },
-  {
-   "fieldname": "date",
-   "fieldtype": "Date",
-   "label": "Date"
-  },
-  {
-   "fieldname": "request",
-   "fieldtype": "Text Editor",
-   "label": "Request"
-  },
-  {
-   "fieldname": "response",
-   "fieldtype": "Text Editor",
-   "label": "Response"
-  }
- ],
- "modified": "2020-09-21 08:24:05.454025",
- "modified_by": "Administrator",
- "module": "Tokhna Peru",
- "name": "Electronic Invoice Request",
- "owner": "Administrator",
- "permissions": [
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "System Manager",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Accounts Manager",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Accounts User",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Sales User",
-   "share": 1,
-   "write": 1
-  }
- ],
- "quick_entry": 1,
- "sort_field": "modified",
- "sort_order": "DESC",
- "track_changes": 1
-}
+    "autoname": "EIR.#######",
+    "creation": "2020-09-21 07:49:48.124086",
+    "doctype": "DocType",
+    "editable_grid": 1,
+    "engine": "InnoDB",
+    "field_order": [
+     "document_type",
+     "document_name",
+     "date",
+     "request",
+     "response"
+    ],
+    "fields": [
+     {
+      "fieldname": "date",
+      "fieldtype": "Date",
+      "label": "Date"
+     },
+     {
+      "fieldname": "request",
+      "fieldtype": "Text Editor",
+      "label": "Request"
+     },
+     {
+      "fieldname": "response",
+      "fieldtype": "Text Editor",
+      "label": "Response"
+     },
+     {
+      "fieldname": "document_type",
+      "fieldtype": "Link",
+      "in_standard_filter": 1,
+      "label": "Document Type",
+      "options": "DocType"
+     },
+     {
+      "fieldname": "document_name",
+      "fieldtype": "Dynamic Link",
+      "in_standard_filter": 1,
+      "label": "Document Name",
+      "options": "document_type"
+     }
+    ],
+    "modified": "2020-10-13 22:29:45.077551",
+    "modified_by": "Administrator",
+    "module": "Nubefact Integration",
+    "name": "Electronic Invoice Request",
+    "owner": "Administrator",
+    "permissions": [
+     {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1,
+      "write": 1
+     },
+     {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Accounts Manager",
+      "share": 1,
+      "write": 1
+     },
+     {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Accounts User",
+      "share": 1,
+      "write": 1
+     },
+     {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Sales User",
+      "share": 1,
+      "write": 1
+     }
+    ],
+    "search_fields": "document_type,document_name",
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "track_changes": 1
+   }

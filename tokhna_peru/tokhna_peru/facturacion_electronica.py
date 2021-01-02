@@ -4,7 +4,7 @@ import frappe
 from frappe.utils import formatdate
 from tokhna_peru.tokhna_peru.doctype.autenticacion.autenticacion import get_autentication, get_url
 from tokhna_peru.tokhna_peru.doctype.configuracion.configuracion import get_unaffected_config
-from tokhna_peru.tokhna_peru.utils import get_serie_correlativo, get_moneda, get_igv, get_tipo_producto, get_serie_online, get_doc_conductor, get_doc_transportista, get_address_information, get_ibp
+from tokhna_peru.tokhna_peru.utils import *
 import requests
 import json
 from datetime import datetime, timedelta
@@ -12,27 +12,26 @@ from datetime import datetime, timedelta
 @frappe.whitelist()
 def send_document(company, invoice, doctype):
     tipo, serie, correlativo = get_serie_correlativo(invoice)
-    online = get_serie_online(company, tipo + "-" + serie + "-")
+    online = get_serie_online(company, tipo + "-" + serie)
     if online:
         url = get_url(company)
         headers = get_autentication(company)
         if url != "" and headers != "":
-            return_type = return_serie = return_correlativo = codigo_nota_credito = party_name = request = ""
+            return_type = return_serie = return_correlativo = codigo_nota_credito = codigo_nota_debito = party_name = ""
             address = {}
-            if frappe.db.exists("Electronic Invoice Request", invoice):
-                request = frappe.get_doc("Electronic Invoice Request", invoice)
-                response = json.loads(request.response)
-                if response.get('success'):
-                    return response
             try:
                 if doctype == "Sales Invoice":
-                    mult  = 1
+                    multi  = 1
                     monto_anticipo_neto = igv_anticipo = anticipo_amount = anticipo_total = 0
+                    producto_bolsas_plasticas = []
                     doc = frappe.get_doc("Sales Invoice", invoice)
                     party_name = doc.customer_name
                     if doc.total_taxes_and_charges:
                         igv, monto_impuesto, igv_inc = get_igv(company, invoice, doctype)
                         ibp, monto_ibp, ibp_inc = get_ibp(company, invoice, doctype)
+                        impuesto_bolsas_plasticas = get_plastic_bags_information(company)
+                        ibp_nombre = impuesto_bolsas_plasticas.title
+                        ibp_tasa = impuesto_bolsas_plasticas.taxes[0]['tax_amount']
                     else:
                         igv = monto_impuesto = igv_inc = 0
                         ibp = monto_ibp = ibp_inc = 0
@@ -41,189 +40,244 @@ def send_document(company, invoice, doctype):
                     if doc.customer_address:
                         address = get_address_information(doc.customer_address)
                     if doc.codigo_transaccion_sunat == "4":
-                        advance = frappe.get_doc("Sales Invoice", doc.sales_invoice_advance)
-                        monto_anticipo_neto = round(advance.net_total, 2)
-                        anticipo_total = round(advance.grand_total)
-                        igv_anticipo, anticipo_amount, anticipo_inc = get_igv(company, advance.name, doctype)
-                        tipo_anticipo, serie_anticipo, correlativo_anticipo = get_serie_correlativo(doc.sales_invoice_advance)
+                        if doc.sales_invoice_advance:
+                            advance = frappe.get_doc("Sales Invoice", doc.sales_invoice_advance)
+                            monto_anticipo_neto = round(advance.net_total, 2)
+                            anticipo_total = round(advance.grand_total)
+                            igv_anticipo, anticipo_amount, anticipo_inc = get_igv(company, advance.name, doctype)
                     if doc.is_return == 1:
                         tipo, return_serie, return_correlativo = get_serie_correlativo(doc.return_against)
                         codigo_nota_credito = doc.codigo_nota_credito
                         return_type = "1" if doc.codigo_tipo_documento == "6" else "2"
-                        mult = -1
+                        multi = -1
+                    elif doc.es_nota_debito == 1:
+                        return_type = "1" if doc.codigo_tipo_documento == "6" else "2"
+                        codigo_nota_debito = doc.codigo_nota_debito
+                        tipo, return_serie, return_correlativo = get_serie_correlativo(doc.nota_de_debito_contra_factura_de_venta)
                     content = {
-                        "serie_documento": serie,
-                        "numero_documento": int(correlativo),
-                        "fecha_de_emision": formatdate(doc.get("posting_date"), "yyyy-mm-dd"),
-                        "hora_de_emision": doc.get_formatted("posting_time"),
-                        "codigo_tipo_operacion": "0101",
-                        "codigo_tipo_documento": doc.codigo_comprobante,
-                        "codigo_tipo_moneda": doc.currency,
-                        "fecha_de_vencimiento": formatdate(doc.get("due_date"), "yyyy-mm-dd"),
-                        "numero_orden_de_compra": doc.po_no or "",
-                        "datos_del_cliente_o_receptor": {
-                            "codigo_tipo_documento_identidad": doc.codigo_tipo_documento,
-                            "numero_documento": doc.tax_id,
-                            "apellidos_y_nombres_o_razon_social": party_name,
-                            "codigo_pais": address.get("pais"),
-                            "ubigeo": address.get("ubigeo", "") or "",
-                            "direccion": address.get("address", ""),
-                            "correo_electronico": address.get("email"),
-                            "telefono": address.get("phone", "")
-                        },
-                        "totales": {
-                            "total_exportacion": 0.00,
-                            "total_operaciones_gravadas": float(round(doc.net_total - monto_anticipo_neto, 2) * mult) if not igv==0 else 0.00,
-                            "total_operaciones_inafectas": float(round(doc.net_total - monto_anticipo_neto, 2) * mult) if igv==0 else 0.00,
-                            "total_operaciones_exoneradas": 0.00,
-                            "total_operaciones_gratuitas": 0.00,
-                            "total_igv": float(round(monto_impuesto - anticipo_amount, 2) * mult),
-                            "total_impuestos_bolsa_plastica": float(round(monto_ibp, 2) * mult),
-                            "total_impuestos": float(round(monto_impuesto - anticipo_amount, 2) * mult),
-                            "total_valor": float(round(doc.net_total - monto_anticipo_neto, 2) * mult),
-                            "total_venta": float(round(doc.grand_total - anticipo_total, 2) * mult)
-                        },
+                            "operacion": "generar_comprobante",
+                            "tipo_de_comprobante": str(tipo_de_comprobante(doc.codigo_comprobante)),
+                            "serie": serie,
+                            "numero": correlativo,
+                            "sunat_transaction": doc.codigo_transaccion_sunat,
+                            "cliente_tipo_de_documento": doc.codigo_tipo_documento,
+                            "cliente_numero_de_documento": doc.tax_id.strip() if doc.tax_id else "",
+                            "cliente_denominacion": party_name,
+                            "cliente_direccion": address.address if address.get('address') else "",
+                            "cliente_email": address.email if address.get('email') else "",
+                            "cliente_email_1": "",
+                            "cliente_email_2": "",
+                            "fecha_de_emision": doc.get_formatted("posting_date"),
+                            "fecha_de_vencimiento": doc.get_formatted("due_date"),
+                            "moneda": str(get_moneda(doc.currency)),
+                            "tipo_de_cambio": str(doc.conversion_rate),
+                            "porcentaje_de_igv": str((igv - igv_anticipo)) if doc.total_taxes_and_charges else str(18.00),
+                            "descuento_global": "",
+                            "total_descuento": "",
+                            "total_anticipo": monto_anticipo_neto if not monto_anticipo_neto==0 else "",
+                            "total_gravada": str(round(doc.net_total - monto_anticipo_neto, 2) * multi) if doc.total_taxes_and_charges else "",
+                            "total_inafecta": str(round(doc.grand_total - anticipo_total, 2) * multi) if not doc.total_taxes_and_charges else "",
+                            "total_exonerada": "",
+                            "total_igv": str(round(monto_impuesto - anticipo_amount, 2) * multi) if doc.total_taxes_and_charges else "",
+                            "total_gratuita": str(doc.total_amount_free),
+                            "total_otros_cargos": "",
+                            "total": str(round(doc.grand_total - anticipo_total, 2) * multi),
+                            "percepcion_tipo": "",
+                            "percepcion_base_imponible": "",
+                            "total_percepcion": "",
+                            "total_incluido_percepcion": "",
+                            "detraccion": "false",
+                            "observaciones": "",
+                            "documento_que_se_modifica_tipo": return_type,
+                            "documento_que_se_modifica_serie": return_serie,
+                            "documento_que_se_modifica_numero": return_correlativo,
+                            "tipo_de_nota_de_credito": str(codigo_nota_credito),
+                            "tipo_de_nota_de_debito": str(codigo_nota_debito),
+                            "enviar_automaticamente_a_la_sunat": "true",
+                            "enviar_automaticamente_al_cliente": "true" if frappe.get_value("Configuracion", company, "send_email_invoice") == 1 else "false",
+                            "codigo_unico": "",
+                            "condiciones_de_pago": doc.payment_terms_template,
+                            "medio_de_pago": "",
+                            "placa_vehiculo": "",
+                            "orden_compra_servicio": doc.po_no if doc.doctype == "Sales Invoice" else "",
+                            "tabla_personalizada_codigo": "",
+                            "formato_de_pdf": frappe.get_value("Configuracion", company, "invoice_format"),
+                            "total_impuestos_bolsas": str(round(monto_ibp, 2) * multi) if monto_ibp != 0 else ""
                     }
                     content['items'] = []
-                    for item in doc.items:
-                        tipo_producto = get_tipo_producto(item.item_code)
-                        content['items'].append({
-                            "codigo_interno": item.item_code.replace('-',''),
-                            "descripcion": item.item_name,
-                            "codigo_producto_sunat": frappe.get_value("Item", item.item_code, "codigo_sunat") or "",
-                            "unidad_de_medida": tipo_producto,
-                            "cantidad": float(item.qty * mult),
-                            "valor_unitario": float(round(item.net_rate, 2)),
-                            "codigo_tipo_precio": "01",
-                            "precio_unitario": float(round(item.rate, 2)) if igv_inc == 1 else float(round(item.net_rate, 2) * (1 + igv)),
-                            "codigo_tipo_afectacion_igv": "10" if not igv==0  else "30",
-                            "total_base_igv": float(round(item.net_amount, 2) * mult),
-                            "porcentaje_igv": 18,
-                            "total_igv": float(round(item.net_amount * igv / 100, 2) * mult),
-                            "total_impuestos": float(round(item.net_amount * igv / 100, 2) * mult),
-                            "total_valor_item": float(round(item.net_amount, 2) * mult),
-                            "total_item": float(round(item.amount, 2) * mult) if igv_inc == 1 else float(round(item.net_amount, 2) * mult * (1 + igv)),
-                    })
-                    if doc.codigo_comprobante == "07":
-                        content['codigo_tipo_nota'] = doc.codigo_nota_credito
-                        content['motivo_o_sustento_de_nota'] = doc.tipo_nota_credito
-                        content['documento_afectado'] = {
-                            "external_id": doc.external_id
-                        }
-                    if frappe.get_value("Configuracion", company, "invoice_format"):
-                        content["acciones"] = { 
-                            "formato_pdf": frappe.get_value("Configuracion", company, "invoice_format")
-                        }
+                    if doc.codigo_transaccion_sunat == "4":
+                        if doc.sales_invoice_advance:
+                            advance_tipo, advance_serie, advance_correlativo = get_serie_correlativo(doc.sales_invoice_advance)
+                            content['items'].append({
+                                "unidad_de_medida": "NIU",
+                                "codigo": "001",
+                                "descripcion": "REGULARIZACIÓN DEL ANTICIPO",
+                                "cantidad": "1",
+                                "valor_unitario": str(monto_anticipo_neto),
+                                "precio_unitario": str(anticipo_total),
+                                "descuento": "",
+                                "subtotal": str(monto_anticipo_neto),
+                                "tipo_de_igv": "1",
+                                "igv": str(round(anticipo_amount, 2)),
+                                "total": str(anticipo_total),
+                                "anticipo_regularizacion": "true",
+                                "anticipo_documento_serie": str(advance_serie),
+                                "anticipo_documento_numero": str(advance_correlativo)
+                            })
+                        else:
+                            content['items'].append(
+                                {
+                                    "unidad_de_medida": "NIU",
+                                    "codigo": "001",
+                                    "descripcion": "PRIMER ANTICIPO",
+                                    "cantidad": "1",
+                                    "valor_unitario": str(round(doc.net_total, 2)),
+                                    "precio_unitario": str(round(doc.grand_total, 2)),
+                                    "descuento": "",
+                                    "subtotal": str(round(doc.net_total, 2)),
+                                    "tipo_de_igv": "1",
+                                    "igv": str(round(monto_impuesto, 2)),
+                                    "total": str(round(doc.grand_total, 2)),
+                                    "anticipo_regularizacion": "false",
+                                    "anticipo_documento_serie": "",
+                                    "anticipo_documento_numero": ""
+                                })
+                    else:
+                        for item in doc.items:
+                            tipo_producto = get_tipo_producto(item.item_code)
+                            if item.unit_value > 0:
+                                tipo_igv = "6"
+                                precio_unitario = round(item.unit_value, 4)
+                                total = round(item.free_amount, 2) * multi
+                            elif doc.total_taxes_and_charges:
+                                tipo_igv = "1"
+                                if igv_inc == 1:
+                                    precio_unitario = round(item.rate, 4)
+                                    total = round(item.amount, 2) * multi
+                                elif igv > 0:
+                                    precio_unitario = round(item.net_rate, 4) * 1.18
+                                    total = round(item.net_amount, 2) * 1.18 * multi
+                            elif doc.codigo_transaccion_sunat == "2":
+                                tipo_igv = "16"
+                                precio_unitario = round(item.unit_value, 4)
+                                total = round(item.amount, 2) * multi
+                            else:
+                                tipo_igv = "9"
+                                precio_unitario = round(item.rate, 4)
+                                total = round(item.amount, 2) * multi
+                            content['items'].append({
+                                "unidad_de_medida": tipo_producto,
+                                "codigo": item.item_code,
+                                "descripcion": item.item_name,
+                                "cantidad": str(item.qty * multi),
+                                "valor_unitario": str(round(item.unit_value, 4)) if (item.unit_value > 0) else str(round(item.net_rate, 4)),
+                                "precio_unitario": str(precio_unitario),
+                                "descuento": str(round(item.discount_amount, 2)) if (item.discount_amount > 0) else "",
+                                "subtotal": str(round(item.free_amount, 2) * multi) if (item.unit_value > 0) else str(round(item.net_amount, 2) * multi),
+                                "tipo_de_igv": tipo_igv,
+                                "igv": str(round(item.net_amount * igv / 100, 2) * multi) if doc.total_taxes_and_charges else "0",
+                                "total": str(total),
+                                "anticipo_regularizacion": "false",
+                                "anticipo_documento_serie": "",
+                                "anticipo_documento_numero": "",
+                                "impuesto_bolsas": str(item.qty * ibp_tasa * multi) if item.item_tax_template == ibp_nombre else ""
+                        })
                 elif doctype == "Delivery Note":
                     doc = frappe.get_doc("Delivery Note", invoice)
                     doc_transportista = get_doc_transportista(doc.transporter)
                     doc_conductor = get_doc_conductor(doc.driver)
                     company_address = customer_address = {}
+                    instrucciones = "Instrucciones: " + doc.instructions if doc.instructions else ""
+                    pedido_de_compra = " / Pedido de compra No. " + doc.po_no if doc.po_no else ""
+                    mtc_no = "/ N° de Inscripcion del MTC. "+ doc.lr_no if doc.lr_no else "" 
                     if doc.customer_address:
                         address = get_address_information(doc.customer_address)
                     if doc.shipping_address_name:
                         customer_address = get_address_information(doc.shipping_address_name)
                     else:
                         customer_address = address
-                    company_address = get_address_information(doc.company_address)
+                    if doc.company_address:
+                        company_address = get_address_information((doc.company_address))
                     content = {
-                        "serie_documento": serie,
-                        "numero_documento": correlativo,
-                        "fecha_de_emision": formatdate(doc.get("posting_date"), "yyyy-mm-dd"),
-                        "hora_de_emision": doc.get_formatted("posting_time"),
-                        "codigo_tipo_documento": "09",
-                        "datos_del_emisor": {
-                            "codigo_pais": company_address.pais,
-                            "ubigeo": company_address.ubigeo,
-                            "direccion": company_address.address,
-                            "correo_electronico": company_address.email,
-                            "telefono": address.get("phone", ""),
-                            "codigo_del_domicilio_fiscal": address.get("code", "")
-                        },
-                        "datos_del_cliente_o_receptor":{
-                            "codigo_tipo_documento_identidad": doc.codigo_tipo_documento,
-                            "numero_documento": doc.tax_id,
-                            "apellidos_y_nombres_o_razon_social": doc.customer_name,
-                            "nombre_comercial": doc.customer_name,
-                            "codigo_pais": customer_address.pais,
-                            "ubigeo": customer_address.ubigeo,
-                            "direccion": customer_address.address,
-                            "correo_electronico": customer_address.email,
-                            "telefono": customer_address.phone
-                        },
-                        "observaciones": "aaaaaaaaaaaaaaa",
-                        "codigo_modo_transporte": doc.codigo_tipo_transporte,
-                        "codigo_motivo_traslado": doc.codigo_motivo_traslado,
-                        "descripcion_motivo_traslado": "El cliente solicito envia a su trabajo en ...",
-                        "fecha_de_traslado": doc.get_formatted("lr_date"),
-                        "codigo_de_puerto": "",
-                        "indicador_de_transbordo": False,
-                        "unidad_peso_total": "KGM",
-                        "peso_total": doc.total_net_weight,
-                        "numero_de_bultos": doc.numero_bultos,
-                        "numero_de_contenedor": "",
-                        "direccion_partida": {
-                            "ubigeo": company_address.ubigeo,
-                            "direccion": company_address.address
-                        },
-                        "direccion_llegada": {
-                            "ubigeo": customer_address.ubigeo,
-                            "direccion": customer_address.address
-                        },
-                        "transportista": {
-                            "codigo_tipo_documento_identidad": doc_transportista.codigo_tipo_documento,
-                            "numero_documento": doc_transportista.tax_id,
-                            "apellidos_y_nombres_o_razon_social": doc_transportista.supplier_name
-                        },
-                        "chofer": {
-                            "codigo_tipo_documento_identidad": doc_conductor.codigo_documento_identidad,
-                            "numero_documento": doc_conductor.tax_id
-                        },
-                        "numero_de_placa": doc.vehicle_no,
+                        "operacion": "generar_guia",
+                        "tipo_de_comprobante": "7",
+                        "serie": serie,
+                        "numero": correlativo,
+                        "cliente_tipo_de_documento": doc.codigo_tipo_documento,
+                        "cliente_numero_de_documento": doc.tax_id.strip(),
+                        "cliente_denominacion": doc.customer_name,
+                        "cliente_direccion": address.getaddress if address.get('address') else "",
+                        "cliente_email": address.email if address.get('email') else "",
+                        "cliente_email_1": "",
+                        "cliente_email_2": "",
+                        "fecha_de_emision": doc.get_formatted("posting_date"),
+                        "observaciones": instrucciones + pedido_de_compra + mtc_no,
+                        "motivo_de_traslado": doc.codigo_motivo_traslado,
+                        "peso_bruto_total": doc.total_net_weight,
+                        "numero_de_bultos": doc.numero_bultos if doc.numero_bultos else "0",
+                        "tipo_de_transporte": doc.codigo_motivo_traslado,
+                        "fecha_de_inicio_de_traslado": doc.get_formatted("lr_date"),
+                        "transportista_documento_tipo": doc_transportista.codigo_tipo_documento,
+                        "transportista_documento_numero": doc_transportista.tax_id,
+                        "transportista_denominacion": doc_transportista.supplier_name,
+                        "transportista_placa_numero": doc.vehicle_no,
+                        "conductor_documento_tipo": doc_conductor.codigo_documento_identidad,
+                        "conductor_documento_numero": doc_conductor.tax_id,
+                        "conductor_denominacion": doc_conductor.full_name,
+                        "punto_de_partida_ubigeo": company_address.ubigeo,
+                        "punto_de_partida_direccion": company_address.address,
+                        "punto_de_llegada_ubigeo": customer_address.ubigeo,
+                        "punto_de_llegada_direccion": customer_address.address,
+                        "enviar_automaticamente_a_la_sunat": "true",
+                        "enviar_automaticamente_al_cliente": "true" if frappe.get_value("Configuracion", company, "send_email_invoice") == 1 else "false",
+                        "codigo_unico": "",
+                        "formato_de_pdf": frappe.get_value("Configuracion", company, "invoice_format"),
                     }
                     content['items'] = []
                     for item in doc.items:
                         tipo_producto = get_tipo_producto(item.item_code)
                         content['items'].append({
-                            "codigo_interno": item.item_code,
-                             "cantidad": item.qty
+                            "unidad_de_medida": tipo_producto,
+                            "codigo": item.item_code,
+                            "descripcion": item.item_name,
+                            "cantidad": str(item.qty)
                     })
-                if frappe.get_value("Configuracion", company, "send_email_invoice") == 1:
-                    if content.get("acciones"):
-                        content["acciones"]["enviar_email"] = "true"
-                    else:
-                        content["acciones"] = { 
-                            "enviar_email": "true"
-                        }                
-                request_date = datetime.strptime(formatdate(doc.get("posting_date"), "yyyy-mm-dd"), '%Y-%m-%d')
-                today = datetime.today()
-                if request_date.year == today.year and request_date.month == today.month:
-                    response = requests.post(url, headers=headers, data=json.dumps(content))
-                    data = json.loads(response.content)
-                    if request:
-                        request.request = json.dumps(content)
-                        request.response = response.content
-                        request.date = request_date
-                        request.save(ignore_permissions=True)
-                    else:                        
-                        request = frappe.get_doc({
-                            "doctype": "Electronic Invoice Request",
-                            "sales_invoice": invoice,
-                            "date": request_date,
-                            "request": json.dumps(content),
-                            "response": response.content
-                        })
-                        request.save(ignore_permissions=True)
-                else:
-                    return ""
-            except:
-                return ""
+                response = requests.post(url, headers=headers, data=json.dumps(content))
+                data = json.loads(response.content)
+                request = frappe.get_doc({
+                    "doctype": "Electronic Invoice Request",
+                    "document_type": doc.doctype,
+                    "document_name": doc.name,
+                    "date": doc.get("posting_date"),
+                    "request": json.dumps(content),
+                    "response": response.content
+                })
+                request.save(ignore_permissions=True)
+            except Exception as e:
+                print(e)
+                return e
             else:
                 return data
         else:
             return ""
     else:
         return ""
+
+def get_electronic_invoice(company, tipo_de_comprobante, numero_comprobante):
+    tipo, serie, correlativo = numero_comprobante.split('-')
+    url = get_url(company)
+    headers = get_autentication(company)
+    if url != "" and headers != "":
+        content = {
+            "operacion": "consultar_comprobante",
+            "tipo_de_comprobante": tipo_de_comprobante,
+            "serie": serie,
+            "numero": correlativo
+        }
+    response = requests.post(url, headers=headers, data=json.dumps(content))
+    data = json.loads(response.content)
+    data['numero_comprobante'] = numero_comprobante
+    return data
 
 @frappe.whitelist()
 def consult_document(company, invoice, doctype):
@@ -233,10 +287,13 @@ def consult_document(company, invoice, doctype):
         url = get_url(company)
         headers = get_autentication(company)
         if url != "" and headers != "":
-            doc = frappe.get_doc(doctype, invoice)
+            if doctype == "Sales Invoice":
+                doc = frappe.get_doc("Sales Invoice", invoice)
+            elif doctype == "Delivery Note":
+                doc = frappe.get_doc("Delivery Note", invoice)
             content = {
                 "operacion": "consultar_comprobante",
-                "tipo_de_comprobante": str(doc.codigo_tipo_comprobante if doctype == "Delivery Note" else doc.codigo_comprobante),
+                "tipo_de_comprobante": str(tipo_de_comprobante(doc.codigo_tipo_comprobante if doctype == "Delivery Note" else doc.codigo_comprobante)),
                 "serie": serie,
                 "numero": correlativo
             }
@@ -250,39 +307,33 @@ def consult_document(company, invoice, doctype):
 @frappe.whitelist()
 def cancel_document(company, invoice, doctype, motivo):
     tipo, serie, correlativo = get_serie_correlativo(invoice)
-    online = get_serie_online(company, tipo + "-" + serie + "-")
+    online = get_serie_online(company, tipo + "-" + serie)
     if online:
-        url = get_url(company).replace('documents','voided')
+        url = get_url(company)
         headers = get_autentication(company)
         if url != "" and headers != "":
-            doc = frappe.get_doc("Sales Invoice", invoice)
-            if doc.get("external_id"):
+            data = consult_document(company, invoice, doctype)
+            if data.get("aceptada_por_sunat"):
                 content = {
-                "fecha_de_emision_de_documentos": formatdate(doc.get_formatted("posting_date"), "yyyy-mm-dd"),
-                "documentos": [
-                        {
-                        "external_id": doc.external_id,
-                        "motivo_anulacion": motivo
-                        }
-                    ]
+                    "operacion": "generar_anulacion",
+                    "tipo_de_comprobante": data["tipo_de_comprobante"],
+                    "serie": data["serie"],
+                    "numero": data["numero"],
+                    "motivo": motivo,
+                    "codigo_unico": ""
                 }
-                if doc.codigo_tipo_documento != "6":
-                    content["codigo_tipo_proceso"] = "3"
-                    url = get_url(company).replace('documents','summaries')
                 response = requests.post(url, headers=headers, data=json.dumps(content))
-                json_response = json.loads(response.content)
-                if json_response.get('success'):
-                    if doctype == "Sales Invoice":
-                        frappe.db.sql(
-                            """UPDATE `tabSales Invoice` SET estado_anulacion='En proceso', hora_cancelacion='{0}', anulacion_ticket='{1}', anulacion_external_id='{2}' WHERE name='{3}' and company='{4}'""".format(
-                                datetime.now(), json_response.get('data').get('ticket'), json_response.get('data').get('external_id'), invoice, company))
-                        frappe.db.commit()
-                    elif doctype == 'Delivery Note':
-                        frappe.db.sql(
-                            """UPDATE `tabDelivery Note` SET estado_anulacion='En proceso', hora_cancelacion='{0}', anulacion_ticket='{1}', anulacion_external_id='{2}' WHERE name='{3}' and company='{4}'""".format(
-                                datetime.now(), json_response.get('data').get('ticket'), json_response.get('data').get('external_id'), invoice, company))
-                        frappe.db.commit()
-                return json_response
+                if doctype == "Sales Invoice":
+                    frappe.db.sql(
+                        """UPDATE `tabSales Invoice` SET estado_anulacion='En proceso', hora_cancelacion='{0}' WHERE name='{1}' and company='{2}'""".format(
+                            datetime.datetime.now(), invoice, company))
+                    frappe.db.commit()
+                elif doctype == 'Delivery Note':
+                    frappe.db.sql(
+                        """UPDATE `tabDelivery Note` SET estado_anulacion='En proceso', hora_cancelacion='{0}' WHERE name='{1}' and company='{2}'""".format(
+                            datetime.datetime.now(), invoice, company))
+                    frappe.db.commit()
+                return json.loads(response.content)
         else:
             return ""
     else:
@@ -293,14 +344,16 @@ def consult_cancel_document(company, invoice, doctype):
     tipo, serie, correlativo = get_serie_correlativo(invoice)
     online = get_serie_online(company, tipo + "-" + serie)
     if online:
-        url = get_url(company).replace('documents','voided/status')
+        url = get_url(company)
         headers = get_autentication(company)
         if url != "" and headers != "":
-            doc = frappe.get_doc(doctype, invoice)
-            if doc.get("estado_anulacion") == "En proceso":
+            data = consult_document(company, invoice, doctype)
+            if data.get("aceptada_por_sunat"):
                 content = {
-                    "external_id": doc.get('external_id'),
-                    "ticket": doc.get('anulacion_ticket')
+                    "operacion": "consultar_anulacion",
+                    "tipo_de_comprobante": data["tipo_de_comprobante"],
+                    "serie": data["serie"],
+                    "numero": data["numero"]
                 }
                 response = requests.post(url, headers=headers, data=json.dumps(content))
                 return json.loads(response.content)
@@ -308,15 +361,6 @@ def consult_cancel_document(company, invoice, doctype):
             return ""
     else:
         return ""
-
-@frappe.whitelist()
-def send_invoice_email(company, invoice):
-    if frappe.get_value("Configuracion", company, "send_email_invoice_erpnext") == 1:
-        doc = frappe.get_doc("Sales Invoice", invoice)
-        customer_email = frappe.get_value("Address", doc.customer_address, "email_id")
-        if customer_email and doc.enlace_pdf:
-            frappe.sendmail(recipients=customer_email,subject="Comprobante Electrónico " + doc.name + " - COLEGIO PIONERO",
-                message="Estimado/a usuario le adjuntamos su comprobante electrónico " + doc.enlace_pdf, delayed=False)
 
 def validate_default_fields(doc, method=None):
     company = frappe.get_doc("Company", doc.company)
