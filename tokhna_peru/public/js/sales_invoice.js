@@ -2,11 +2,12 @@ cur_frm.add_fetch('customer', 'codigo_tipo_documento', 'codigo_tipo_documento');
 cur_frm.add_fetch('customer', 'tipo_documento_identidad', 'tipo_documento_identidad');
 cur_frm.add_fetch('tipo_transaccion_sunat', 'codigo_tipo_transaccion', 'codigo_transaccion_sunat');
 cur_frm.add_fetch('tipo_nota_credito', 'codigo_notas_credito', 'codigo_nota_credito');
+cur_frm.add_fetch('tipo_nota_debito', 'codigo_notas_debito', 'codigo_nota_debito');
 
 function get_document_series(frm, cdt, cdn) {
 	frappe.call({
 		type: "GET",
-		method: "tokhna_peru.tokhna_peru.doctype.configuracion.configuracion.get_doc_serie",
+		method: "tokhna_peru.tokhna_peru.doctype.configuracion_nubefact.configuracion_nubefact.get_doc_serie",
 		args: {
             company: frm.doc.company,
 			doctype: frm.doc.doctype,
@@ -42,13 +43,13 @@ function get_product_anticipo(frm, cdt, cdn) {
 	if (frm.doc.codigo_transaccion_sunat == "4") {
 		frappe.call({
 			type: "GET",
-            method: "tokhna_peru.tokhna_peru.doctype.configuracion.configuracion.get_product_anticipo",
+            method: "tokhna_peru.tokhna_peru.doctype.configuracion_nubefact.configuracion_nubefact.get_product_anticipo",
             args: {
                 company: frm.doc.company
             },
 			callback: function(r) {
 				if (r.message) {
-					if (frm.doc.sales_invoice_advance === undefined){
+					if (frm.doc.sales_invoice_advance === ""){
 						cur_frm.set_query("item_code", "items", function(){
 							return {
 								"filters": [
@@ -69,6 +70,8 @@ function get_product_anticipo(frm, cdt, cdn) {
 				}
 			}
 		});
+		cur_frm.toggle_display("sales_invoice_advance", true);
+		frm.refresh_field("sales_invoice_advance");
 	}
 	else {
 		frappe.model.set_value(cdt, cdn, "sales_invoice_advance", "");
@@ -127,14 +130,8 @@ function set_pos_profile(frm, cdt, cdn) {
 	}
 }
 
-cur_frm.page.add_action_item("Send Electronic Invoice", function() {
-	frappe.call({
-		method: "tokhna_peru.tokhna_peru.facturacion_electronica.send_invoice_email",
-		args: {
-			"company": cur_frm.doc.company,
-			"invoice": cur_frm.doc.name
-		}
-	});
+cur_frm.page.add_action_item("View Electronic Invoice", function() {
+	window.open(frm.doc.enlace_del_pdf);
 });
 
 frappe.ui.form.on("Sales Invoice", {
@@ -171,68 +168,90 @@ frappe.ui.form.on("Sales Invoice", {
     },
     
     is_return: function(frm, cdt, cdn) {
+		if (frm.doc.is_return == 1){
+			frm.doc.es_nota_debito = 0;
+			frm.doc.tipo_nota_debito = "";
+			frm.doc.codigo_nota_debito = "";
+			frm.refresh_fields();
+		} else {
+			frm.doc.tipo_nota_credito = "";
+			frm.doc.codigo_nota_credito = "";
+			frm.refresh_fields();
+		}
 		if (frm.doc.codigo_tipo_documento && frm.doc.is_return == 1) {
 			get_document_series(frm, cdt, cdn);
 		}
-    },
+	},
+
+	es_nota_debito: function(frm, cdt, cdn) {
+		if (frm.doc.es_nota_debito == 1){
+			frm.doc.is_return = 0;
+			frm.doc.tipo_nota_credito = "";
+			frm.doc.codigo_nota_credito = "";
+			frm.refresh_fields();
+		} else {
+			frm.doc.tipo_nota_debito = "";
+			frm.doc.codigo_nota_debito = "";
+			frm.refresh_fields();
+		}
+		if (frm.doc.codigo_tipo_documento && frm.doc.es_nota_debito == 1) {
+			get_document_series(frm, cdt, cdn);
+		}
+	},
     
-    before_submit: function(frm, cdt, cdn) {
+	before_submit: function(frm, cdt, cdn) {
 		if(!frm.doc.customer_address && frm.doc.codigo_tipo_documento != "-"){
             frappe.validated = false;
             frappe.throw("Customer Address is missing");
         }
-        if (frm.doc.estado_sunat == null || frm.doc.is_return == 1) {
-            return new Promise(function(resolve, reject) {
-				frappe.call({
-                    method: "tokhna_peru.tokhna_peru.facturacion_electronica.send_document",
-                    args: {
-                        'company': frm.doc.company,
-                        'invoice': frm.doc.name,
-                        'doctype': frm.doc.doctype
-                    },
-                    callback: function(values) {
-                        resolve(values);
-                    }
-                });
-			}).then(function(values) {
-				console.log(values);
-                if (values.message){
-                    if (values.message.data){
-                        if (values.message.data.state_type_description == "Aceptado" || values.message.data.state_type_description == "Registrado"){
-                            frappe.model.set_value(cdt, cdn, "estado_sunat", values.message.data.state_type_description);
-                            frappe.model.set_value(cdt, cdn, "enlace_pdf", values.message.links.pdf.replace("downloads", "print").replace("pdf/", ""));
-                            frappe.model.set_value(cdt, cdn, "codigo_hash_sunat", values.message.data.hash);
-                            frappe.model.set_value(cdt, cdn, "external_id", values.message.data.external_id);
-                            window.open(values.message.links.pdf.replace("downloads", "print").replace("pdf/", ""));
-                            if (values.message.response) {
-                                frappe.model.set_value(cdt, cdn, "respuesta_sunat", values.message.response.description);
-							}
-							frappe.call({
-								method: "tokhna_peru.tokhna_peru.facturacion_electronica.send_invoice_email",
-								args: {
-									"company": cur_frm.doc.company,
-									"invoice": cur_frm.doc.name
-								}
-							});
-						} 
-						else {
-                            frappe.validated = false;
-                            frappe.throw(data.message.response.description);
-                        }
-					} 
-					else if (values.message.message.includes("ya se encuentra registrado")){
-						console.log("Comprobante registrado");
-					}
-					else {
-                        frappe.validated = false;
-                    }                    
-				} 
-				else {
-                    frappe.validated = false;
-                }                
+		return new Promise(function(resolve, reject) {
+			frappe.call({
+				method: "tokhna_peru.tokhna_peru.facturacion_electronica.consult_document",
+				args: {
+					'company': frm.doc.company,
+					'invoice': frm.doc.name,
+					'doctype': frm.doc.doctype
+				},
+				callback: function(values) {
+					resolve(values);
+				}
 			});
-        }
-    },
+		}).then(function(values) {
+			if (values.message.codigo == "24"){
+				frappe.call({
+					method: "tokhna_peru.tokhna_peru.facturacion_electronica.send_document",
+					args: {
+						'company': frm.doc.company,
+						'invoice': frm.doc.name,
+						'doctype': frm.doc.doctype
+					},
+					callback: function(data) {
+						console.log(data);
+						if (data.message.codigo_hash) {
+							frappe.model.set_value(cdt, cdn, "estado_sunat", (data.message.codigo_hash != "") ? ("Aceptado") : ("Rechazado"));
+							frappe.model.set_value(cdt, cdn, "respuesta_sunat", data.message.sunat_descripcion);
+							frappe.model.set_value(cdt, cdn, "codigo_qr_sunat", data.message.cadena_para_codigo_qr);
+							frappe.model.set_value(cdt, cdn, "codigo_barras_sunat", data.message.codigo_de_barras);
+							frappe.model.set_value(cdt, cdn, "codigo_hash_sunat", data.message.codigo_hash);
+							frappe.model.set_value(cdt, cdn, "enlace_pdf", data.message.enlace_del_pdf);
+							window.open(data.message.enlace_del_pdf);
+						} else{
+							frappe.validated = false;
+							frappe.throw(data.message.errors);
+						}
+					}
+				});
+			} else {
+				frappe.model.set_value(cdt, cdn, "estado_sunat", (values.message.codigo_hash != "") ? ("Aceptado") : ("Rechazado"));
+				frappe.model.set_value(cdt, cdn, "respuesta_sunat", values.message.sunat_descripcion);
+				frappe.model.set_value(cdt, cdn, "codigo_qr_sunat", values.message.cadena_para_codigo_qr);
+				frappe.model.set_value(cdt, cdn, "codigo_barras_sunat", values.message.codigo_de_barras);
+				frappe.model.set_value(cdt, cdn, "codigo_hash_sunat", values.message.codigo_hash);
+				frappe.model.set_value(cdt, cdn, "enlace_pdf", values.message.enlace_del_pdf);
+				window.open(values.message.enlace_del_pdf);
+			}
+		});
+	},
     
     refresh: function(frm, cdt, cdn) {
 		if (frm.doc.is_return == 1) {
@@ -243,54 +262,65 @@ frappe.ui.form.on("Sales Invoice", {
 				get_document_customer(frm, cdt, cdn);
 			}			
 		}
-    },
+		if (frm.doc.__islocal == 1){
+			frappe.model.set_value(cdt, cdn, "estado_sunat", "");
+			frappe.model.set_value(cdt, cdn, "respuesta_sunat", "");
+		}
+	},
     
     before_cancel: function(frm, cdt, cdn) {
-		if (frm.doc.safe_delete == 0){
-			if (frappe.datetime.get_day_diff(frm.doc.posting_date, frappe.datetime.get_today()) < 7 && frm.doc.estado_anulacion != "En proceso" && frm.doc.external_id != undefined) {
-				return new Promise(function(resolve, reject) {
-					frappe.prompt([
-							{ 'fieldname': 'motivo', 'fieldtype': 'Data', 'label': 'Motivo de la cancelacion', 'reqd': 1 }
-						],
-						function(values) {
-							resolve(values);
-						},
-						'Cancelacion de Comprobante',
-						'Anular'
-					);
-				}).then(function(values) {
-					frappe.validated = false;
-					frappe.call({
-						method: "tokhna_peru.tokhna_peru.facturacion_electronica.cancel_document",
-						args: {
-							'company': frm.doc.company,
-							'invoice': frm.docname,
-							'doctype': frm.doctype,
-							'motivo': values.motivo
-						},
-						callback: function(data) {
-							console.log(data);
-							if (data.message != "" && data.message.success){
+		return new Promise(function(resolve, reject) {
+			frappe.call({
+				method: "tokhna_peru.tokhna_peru.facturacion_electronica.consult_document",
+				args: {
+					'company': frm.doc.company,
+					'invoice': frm.doc.name,
+					'doctype': frm.doc.doctype
+				},
+				callback: function(values) {
+					resolve(values);
+				}
+			});
+		}).then(function(values) {
+			console.log(values);
+			if (values.message.codigo != "24" && values.message != ""){
+				if (frappe.datetime.get_day_diff(frm.doc.posting_date, frappe.datetime.get_today()) < 7 && frm.doc.estado_anulacion != "En proceso") {
+					return new Promise(function(resolve, reject) {
+						frappe.prompt([
+								{ 'fieldname': 'motivo', 'fieldtype': 'Data', 'label': 'Motivo de la cancelacion', 'reqd': 1 }
+							],
+							function(values) {
+								resolve(values);
+							},
+							'Cancelacion de Comprobante',
+							'Anular'
+						);
+					}).then(function(values) {
+						frappe.validated = false;
+						frappe.call({
+							method: "tokhna_peru.tokhna_peru.facturacion_electronica.cancel_document",
+							args: {
+								'company': frm.doc.company,
+								'invoice': frm.docname,
+								'doctype': frm.doctype,
+								'motivo': values.motivo
+							},
+							callback: function(data) {
 								frappe.msgprint("<b>Esperando respuesta de SUNAT</b>", 'Cancelación');
-							} else {
-								frappe.msgprint("<b>Error al generar anulación</b>", 'Cancelación');
-							}						
-						}
+							}
+						});
 					});
-				});
-			} else {
-				frappe.validated = false;
-				frappe.msgprint("<b>Documento no se puede anular o esta en proceso de anulación</b>", 'Cancelación');
-			}
-		}
-    },
+				} else {
+					frappe.validated = false;
+					frappe.msgprint("<b>Documento no se puede anular o esta en proceso de anulación</b>", 'Cancelación');
+				}
+			} 
+		});
+	},
     
     onload: function(frm, cdt, cdn) {
-		if (frm.doc.estado_sunat != undefined) {
+		if (frm.doc.codigo_qr_sunat === undefined && frm.doc.estado_sunat == "Aceptado") {
 			frappe.model.set_value(cdt, cdn, "estado_sunat", null);
-			frappe.model.set_value(cdt, cdn, "enlace_pdf", null);
-			frappe.model.set_value(cdt, cdn, "codigo_hash_sunat", null);
-			frappe.model.set_value(cdt, cdn, "external_id", null);
 		}
 	}
 });

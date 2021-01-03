@@ -19,6 +19,7 @@ function get_document_customer(frm, cdt, cdn){
 		get_document_series(frm, cdt, cdn);
 	});
 }
+
 function filter_comprobantes(frm, cdt, cdn){
 	cur_frm.set_query("tipo_comprobante", function(){
 		return {
@@ -27,15 +28,11 @@ function filter_comprobantes(frm, cdt, cdn){
 		};
 	});
 }
-frappe.ui.form.on("Delivery Note", {
-	onload: function(frm, cdt, cdn){
-		filter_comprobantes(frm, cdt, cdn);
-	}
-});
+
 function get_document_series(frm, cdt, cdn){
 	frappe.call({
 		type: "GET",
-		method: "tokhna_peru.tokhna_peru.doctype.configuracion.configuracion.get_doc_serie",
+		method: "tokhna_peru.tokhna_peru.doctype.configuracion_nubefact.configuracion_nubefact.get_doc_serie",
 		args: {
 			company: frm.doc.company,
 			doctype: frm.doc.doctype,
@@ -48,7 +45,12 @@ function get_document_series(frm, cdt, cdn){
 		}
 	});
 }
+
 frappe.ui.form.on("Delivery Note", {
+	onload: function(frm, cdt, cdn){
+		filter_comprobantes(frm, cdt, cdn);
+	},
+
 	customer: function(frm, cdt, cdn) {
 		if (frm.doc.codigo_tipo_documento){
 			get_document_series(frm, cdt, cdn);
@@ -57,9 +59,8 @@ frappe.ui.form.on("Delivery Note", {
 			frappe.model.set_value(cdt, cdn, "tipo_comprobante", null);
 			frappe.model.set_value(cdt, cdn, "codigo_comprobante", null);
 		}
-	}
-});
-frappe.ui.form.on('Delivery Note', {
+	},
+
 	before_submit: function(frm, cdt, cdn) {
 		if(!frm.doc.customer_address || !frm.doc.transporter || ! frm.doc.driver){
             frappe.validated = false;
@@ -108,16 +109,14 @@ frappe.ui.form.on('Delivery Note', {
                 }
 			});
         }
-	}
-});
-frappe.ui.form.on('Delivery Note', {
+	},
+
 	refresh: function(frm, cdt, cdn) {
 		if (frm.doc.customer){
 			get_document_customer(frm, cdt, cdn);
 		}
-	}
-});
-frappe.ui.form.on("Delivery Note", {
+	},
+
 	before_cancel: function(frm, cdt, cdn) {
 		return new Promise(function(resolve, reject) {
 			frappe.call({
