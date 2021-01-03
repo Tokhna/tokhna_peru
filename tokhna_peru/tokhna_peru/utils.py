@@ -10,7 +10,6 @@ import os
 class Utils(NamingSeries):
 	def get_series(self):
 		sales_series = self.get_options("Sales Invoice")
-		purchase_series = self.get_options("Purchase Invoice")
 		sales_prefix = []
 		sales = ""
 		purchase_prefix = []
@@ -19,12 +18,7 @@ class Utils(NamingSeries):
 			tipo = series[:2]
 			if not tipo in sales_prefix:
 				sales_prefix.append(tipo + "%")
-		for series in purchase_series:
-			tipo = series[:2]
-			if not tipo in purchase_prefix:
-				purchase_prefix.append(tipo)
 		sales = " OR ".join(map(str, sales_prefix))
-		purchase = " OR ".join(map(str, purchase_prefix))
 		return sales, purchase
 
 	def get_dates(self, year, periodo):

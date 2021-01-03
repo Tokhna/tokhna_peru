@@ -32,7 +32,7 @@ function filter_comprobantes(frm, cdt, cdn){
 function get_document_series(frm, cdt, cdn){
 	frappe.call({
 		type: "GET",
-		method: "tokhna_peru.tokhna_peru.doctype.configuracion_nubefact.configuracion_nubefact.get_doc_serie",
+		method: "tokhna_peru.tokhna_peru.doctype.configuracion.configuracion.get_doc_serie",
 		args: {
 			company: frm.doc.company,
 			doctype: frm.doc.doctype,

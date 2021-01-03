@@ -7,7 +7,7 @@ cur_frm.add_fetch('tipo_nota_debito', 'codigo_notas_debito', 'codigo_nota_debito
 function get_document_series(frm, cdt, cdn) {
 	frappe.call({
 		type: "GET",
-		method: "tokhna_peru.tokhna_peru.doctype.configuracion_nubefact.configuracion_nubefact.get_doc_serie",
+		method: "tokhna_peru.tokhna_peru.doctype.configuracion.configuracion.get_doc_serie",
 		args: {
             company: frm.doc.company,
 			doctype: frm.doc.doctype,
@@ -43,7 +43,7 @@ function get_product_anticipo(frm, cdt, cdn) {
 	if (frm.doc.codigo_transaccion_sunat == "4") {
 		frappe.call({
 			type: "GET",
-            method: "tokhna_peru.tokhna_peru.doctype.configuracion_nubefact.configuracion_nubefact.get_product_anticipo",
+            method: "tokhna_peru.tokhna_peru.doctype.configuracion.configuracion.get_product_anticipo",
             args: {
                 company: frm.doc.company
             },
