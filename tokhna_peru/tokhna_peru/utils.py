@@ -384,11 +384,14 @@ def get_tipo_producto(item_name):
 
 def get_serie_online(company, doc_serie):
 	online_serie =[]
+	online = False
 	series = frappe.get_doc("Configuracion", company).configuracion_series
 	#recorre todos los tipos de comprobante y almacena las series online en un diccionario
 	for serie in series:
 		if serie.online:
 			online_serie.append(serie.serie_documento)
 	#devuelve True si el serie es online
-	online = doc_serie in online_serie
+	for serie in online_serie:
+		if doc_serie in serie:
+			online = True
 	return online

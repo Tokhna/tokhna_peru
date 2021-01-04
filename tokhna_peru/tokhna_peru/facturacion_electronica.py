@@ -17,7 +17,7 @@ def send_document(company, invoice, doctype):
         url = get_url(company)
         headers = get_autentication(company)
         if url != "" and headers != "":
-            return_type = return_serie = return_correlativo = codigo_nota_credito = codigo_nota_debito = party_name = ""
+            return_type = return_serie = return_correlativo = codigo_nota_credito = codigo_nota_debito = party_name = ibp_nombre = ibp_tasa = ""
             address = {}
             try:
                 if doctype == "Sales Invoice":
@@ -31,7 +31,7 @@ def send_document(company, invoice, doctype):
                         ibp, monto_ibp, ibp_inc = get_ibp(company, invoice, doctype)
                         impuesto_bolsas_plasticas = get_plastic_bags_information(company)
                         ibp_nombre = impuesto_bolsas_plasticas.title
-                        ibp_tasa = impuesto_bolsas_plasticas.taxes[0]['tax_amount']
+                        ibp_tasa = impuesto_bolsas_plasticas.taxes[0].tax_amount
                     else:
                         igv = monto_impuesto = igv_inc = 0
                         ibp = monto_ibp = ibp_inc = 0
@@ -79,7 +79,7 @@ def send_document(company, invoice, doctype):
                             "total_inafecta": str(round(doc.grand_total - anticipo_total, 2) * multi) if not doc.total_taxes_and_charges else "",
                             "total_exonerada": "",
                             "total_igv": str(round(monto_impuesto - anticipo_amount, 2) * multi) if doc.total_taxes_and_charges else "",
-                            "total_gratuita": str(doc.total_amount_free),
+                            "total_gratuita": "",
                             "total_otros_cargos": "",
                             "total": str(round(doc.grand_total - anticipo_total, 2) * multi),
                             "percepcion_tipo": "",
@@ -145,11 +145,7 @@ def send_document(company, invoice, doctype):
                     else:
                         for item in doc.items:
                             tipo_producto = get_tipo_producto(item.item_code)
-                            if item.unit_value > 0:
-                                tipo_igv = "6"
-                                precio_unitario = round(item.unit_value, 4)
-                                total = round(item.free_amount, 2) * multi
-                            elif doc.total_taxes_and_charges:
+                            if doc.total_taxes_and_charges:
                                 tipo_igv = "1"
                                 if igv_inc == 1:
                                     precio_unitario = round(item.rate, 4)
@@ -157,10 +153,6 @@ def send_document(company, invoice, doctype):
                                 elif igv > 0:
                                     precio_unitario = round(item.net_rate, 4) * 1.18
                                     total = round(item.net_amount, 2) * 1.18 * multi
-                            elif doc.codigo_transaccion_sunat == "2":
-                                tipo_igv = "16"
-                                precio_unitario = round(item.unit_value, 4)
-                                total = round(item.amount, 2) * multi
                             else:
                                 tipo_igv = "9"
                                 precio_unitario = round(item.rate, 4)
@@ -170,10 +162,10 @@ def send_document(company, invoice, doctype):
                                 "codigo": item.item_code,
                                 "descripcion": item.item_name,
                                 "cantidad": str(item.qty * multi),
-                                "valor_unitario": str(round(item.unit_value, 4)) if (item.unit_value > 0) else str(round(item.net_rate, 4)),
+                                "valor_unitario": str(round(item.net_rate, 4)),
                                 "precio_unitario": str(precio_unitario),
                                 "descuento": str(round(item.discount_amount, 2)) if (item.discount_amount > 0) else "",
-                                "subtotal": str(round(item.free_amount, 2) * multi) if (item.unit_value > 0) else str(round(item.net_amount, 2) * multi),
+                                "subtotal": str(round(item.net_amount, 2) * multi),
                                 "tipo_de_igv": tipo_igv,
                                 "igv": str(round(item.net_amount * igv / 100, 2) * multi) if doc.total_taxes_and_charges else "0",
                                 "total": str(total),

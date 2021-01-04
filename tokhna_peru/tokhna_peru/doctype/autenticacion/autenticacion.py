@@ -14,7 +14,7 @@ class Autenticacion(Document):
 @frappe.whitelist()
 def test_connection(url, token):
 	headers = {
-			"Authorization": "Bearer " + token,
+			"Authorization": token,
 			"Content-Type":  "application/json"
 	}
 	response = requests.post(url, headers=headers)
@@ -28,7 +28,7 @@ def get_autentication(company):
 		headers = {}
 	else:
 		headers = {
-			"Authorization": "Bearer " + token,
+			"Authorization": token,
 			"Content-Type": "application/json"
 		}
 	return headers

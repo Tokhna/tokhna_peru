@@ -97,19 +97,19 @@
    "label": "Enviar Comprobante por Email"
   },
   {
-    "default": "0",
-    "fieldname": "send_email_invoice_erpnext",
-    "fieldtype": "Check",
-    "label": "Enviar Comprobante por Email (ERPNEXT)"
+   "default": "0",
+   "fieldname": "send_email_invoice_erpnext",
+   "fieldtype": "Check",
+   "label": "Enviar Comprobante por Email (ERPNEXT)"
   },
   {
    "fieldname": "invoice_format",
    "fieldtype": "Select",
    "label": "Formato de Comprobante Electr\u00f3nico",
-   "options": "\na4\nticket"
+   "options": "\nA4\nA5\nTICKET"
   }
  ],
- "modified": "2020-06-06 09:05:19.716373",
+ "modified": "2021-01-04 16:44:56.000701",
  "modified_by": "Administrator",
  "module": "Tokhna Peru",
  "name": "Configuracion",
