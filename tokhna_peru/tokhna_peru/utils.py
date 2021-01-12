@@ -188,7 +188,8 @@ def to_file(data, tipo, nombre, primer=None):
 				row['total_inafecto'] + "|" + 
 				row['monto_isc'] + "|" + 
 				row['base_arroz'] + "|" + 
-				row['impuesto_arroz'] + "|" + 
+				row['impuesto_arroz'] + "|" +
+				row['monto_ibp'] + "|" + 
 				row['otros_conceptos'] + "|" + 
 				str(row['valor_adquisicion']) + "|" + 
 				row['moneda'] + "|" + 
