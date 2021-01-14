@@ -81,6 +81,7 @@ class LibroElectronicodeVentas(Utils):
                 'monto_isc': d.monto_isc,
                 'base_arroz': d.base_arroz,
                 'impuesto_arroz': d.impuesto_arroz,
+                'monto_ibp': d.monto_ibp,
                 'otros_conceptos': d.otros_conceptos,
                 'valor_adquisicion': d.valor_adquisicion,
                 'moneda': d.moneda,

@@ -140,7 +140,8 @@ def to_file(data, tipo, nombre, primer=None):
 				row['base_imponible_no_gravada'] + '|' + 
 				row['monto_impuesto_no_gravada'] + '|' + 
 				row['valor_adquisicion_no_gravada'] + '|' + 
-				row['monto_isc'] + '|' + 
+				row['monto_isc'] + '|' +
+				row['monto_ibp'] + "|" +
 				row['otros_conceptos'] + '|' + 
 				str(row['valor_adquisicion']) + '|' + 
 				row['moneda'] + '|' + 
@@ -189,7 +190,7 @@ def to_file(data, tipo, nombre, primer=None):
 				row['monto_isc'] + "|" + 
 				row['base_arroz'] + "|" + 
 				row['impuesto_arroz'] + "|" +
-				row['monto_ibp'] + "|" + 
+				row['monto_ibp'] + "|" +
 				row['otros_conceptos'] + "|" + 
 				str(row['valor_adquisicion']) + "|" + 
 				row['moneda'] + "|" + 

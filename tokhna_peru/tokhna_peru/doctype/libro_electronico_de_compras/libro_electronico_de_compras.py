@@ -36,6 +36,7 @@ class LibroElectronicodeCompras(Utils):
 				"" as monto_impuesto_no_gravada,
 				"" as valor_adquisicion_no_gravada,
 				"" as monto_isc,
+				"" as monto_ibp,
 				"" as otros_conceptos,			
 				grand_total as valor_adquisicion,
 				IF(currency = 'SOL', 'PEN', currency) as moneda,
@@ -86,6 +87,7 @@ class LibroElectronicodeCompras(Utils):
 				'monto_impuesto_no_gravada': d.monto_impuesto_no_gravada,
 				'valor_adquisicion_no_gravada': d.valor_adquisicion_no_gravada,
 				'monto_isc': d.monto_isc,
+				'monto_ibp': d.monto_ibp,
 				'otros_conceptos': d.otros_conceptos,
 				'valor_adquisicion': d.valor_adquisicion,
 				'moneda': d.moneda,
@@ -106,7 +108,7 @@ class LibroElectronicodeCompras(Utils):
 				'error_4': d.error_4,
 				'indicador_pago': d.indicador_pago,
 				'anotacion': d.anotacion
-				})
+			})
 		return purchase_invoice_list
 
 
