@@ -29,18 +29,18 @@ class LibroElectronicodeVentas(Utils):
 				IF(codigo_tipo_documento=7,IF(SUBSTRING(REPLACE(tax_id,"-",""),-12)="",tax_id, SUBSTRING(REPLACE(tax_id,"-",""),-12)),IF(base_net_total>700,tax_id,IF(ISNULL(tax_id),"",tax_id))) as numero_documento,
 				IF(base_net_total>700,customer_name,IF(ISNULL(tax_id),"",IF(customer_name='Clientes Varios',customer_boleta_name,customer_name))) as nombre_cliente,
 				"" as valor_exportacion,
-				base_net_total as base_imponible,
+				ROUND(base_net_total,2) as base_imponible,
 				"" as descuento,
-				total_taxes_and_charges as monto_impuesto,
+				ROUND(total_taxes_and_charges,2) as monto_impuesto,
 				"" as descuento_igv,
 				"" as total_exonerado,
-				IF(total_taxes_and_charges != 0, "", grand_total) as total_inafecto,
+				IF(total_taxes_and_charges != 0, "", ROUND(grand_total,2)) as total_inafecto,
 				"" as monto_isc,
 				"" as base_arroz,
 				"" as impuesto_arroz,
-                "" as monto_ibp,
+                "0.00" as monto_ibp,
 				"" as otros_conceptos,		
-				grand_total as valor_adquisicion,
+				ROUND(grand_total,2) as valor_adquisicion,
 				IF(currency = 'SOL', 'PEN', currency) as moneda,
 				SUBSTRING(conversion_rate,1,POSITION('.' in conversion_rate)+3) as tipo_cambio,
 				IF(is_return,(SELECT due_date FROM `tabSales Invoice` WHERE name=return_against),"") as fecha_inicial_devolucion,
@@ -53,9 +53,9 @@ class LibroElectronicodeVentas(Utils):
 				IF(sales_invoice.docstatus='2','2',IF(CONCAT(DATE_FORMAT(posting_date,'%Y-%m'),'-01')>=due_date,'7','1')) as anotacion
 			from
 				`tabSales Invoice` as sales_invoice
-			where due_date > '""" + str(from_date) + """' 
-			and due_date < '""" + str(to_date) + """' 
-			order by due_date""", as_dict=True)
+			where posting_date >= '""" + str(from_date) + """' 
+			and posting_date <= '""" + str(to_date) + """'
+			order by posting_date""", as_dict=True)
 
         for d in sales_invoices:
             sales_invoice_list.append({
