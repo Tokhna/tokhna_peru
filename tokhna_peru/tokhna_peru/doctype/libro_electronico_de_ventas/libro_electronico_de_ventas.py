@@ -34,7 +34,7 @@ class LibroElectronicodeVentas(Utils):
 				total_taxes_and_charges as monto_impuesto,
 				"" as descuento_igv,
 				"" as total_exonerado,
-				IF(base_total_taxes_and_charges != 0, "", base_grand_total) as total_inafecto,
+				IF(total_taxes_and_charges != 0, "", grand_total) as total_inafecto,
 				"" as monto_isc,
 				"" as base_arroz,
 				"" as impuesto_arroz,
