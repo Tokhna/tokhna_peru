@@ -50,7 +50,7 @@ class LibroElectronicodeVentas(Utils):
 				"" as contrato,
 				"" as error_1,
 				'1' as indicador_pago,
-				IF(sales_invoice.docstatus='2','2',IF(CONCAT(DATE_FORMAT(posting_date,'%Y-%m'),'-01')>=due_date,'7','1')) as anotacion
+				IF(sales_invoice.docstatus='2','2',IF(CONCAT(DATE_FORMAT(posting_date,'%Y-%m'),'-01')>posting_date,'7','1')) as anotacion
 			from
 				`tabSales Invoice` as sales_invoice
 			where posting_date >= '""" + str(from_date) + """' 
